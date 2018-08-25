@@ -1,0 +1,6 @@
+#!/bin/bash
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )"/.. && pwd )"
+if [ ! -d "$DIR/out" ]; then
+  bash "$DIR/unix/build-bigtalk"
+fi
+BIGTALK_PATH="$DIR"/modules java -ea -cp "$DIR"/out io.josephkim.BigTalkDesktop "$@"
