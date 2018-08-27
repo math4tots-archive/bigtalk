@@ -37,6 +37,16 @@ assert.equal({1, 2, 3}, {1, 2, 3})
 assert.equal({1, 2, 3}, {3, 2, 1})
 assert.equal({1, [2]}, {[2], 1})
 
+(() -> % {
+  x = 10
+  assert.equal(x, 10)
+  %% {
+    x = 'hi'
+    assert.equal(x, 'hi')
+  }
+  assert.equal(x, 10)
+})()
+
 """numbers"""
 assert.equal(1 + 2, 3)
 assert.equal(15 - 10, 5)

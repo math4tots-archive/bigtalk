@@ -1757,7 +1757,7 @@ public final class BigTalkCore {
     "await"));
   public static final List<String> symbols = reversed(sorted(Arrays.asList(
     "\n",
-    "=>", "->", "/", "//",
+    "=>", "->", "/", "//", "%%",
 
     // ECMA 5 punctuators
     "{", "}", "(", ")", "[", "]",
@@ -2122,6 +2122,10 @@ public final class BigTalkCore {
         new DefStar(token, name, parameters, body) :
         new Def(token, name, parameters, body);
     }
+    BlockExpression parseBlockExpression() {
+      Token token = peek();
+      return new BlockExpression(token, parseBlock().statements);
+    }
     ClassDef parseClass() {
       Token token = expect("class");
       return parseClassContent(token);
@@ -2235,7 +2239,13 @@ public final class BigTalkCore {
         return functionCall(token, makeListFn, expressions);
       }
       if (consume("%")) {
-        return new BlockExpression(token, parseBlock().statements);
+        return parseBlockExpression();
+      }
+      if (consume("%%")) {
+        return new CallFunction(
+          token,
+          new Def(token, lambdaName, P(), parseBlockExpression()),
+          new ArrayList<>());
       }
       if (at("(")) {
         int save = i;

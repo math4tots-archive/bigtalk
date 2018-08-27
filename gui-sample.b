@@ -1,3 +1,4 @@
+import _bt.basic_test
 import gui.swing
 import gui.swing.color
 
