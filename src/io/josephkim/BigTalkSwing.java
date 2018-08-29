@@ -31,6 +31,10 @@ public final class BigTalkSwing {
       Component.class,
       "Component",
       new Scope(null)
+        .put(new Builtin("getSize", P(), (self, args) -> {
+          Dimension dim = self.mustGetNative(Component.class).getSize();
+          return Arr.of(Number.of(dim.width), Number.of(dim.height));
+        }))
         .put(new Builtin("addMouseListener", P("listener"), (self, args) -> {
           Value listener = args[0];
           Value mouseClicked = listener.mustGetAttribute(Symbol.of("mouseClicked"));
@@ -116,6 +120,10 @@ public final class BigTalkSwing {
       "Frame",
       listOf(jcomponentClass),
       new Scope(null)
+        .put(new Builtin("pack", P(), (self, args) -> {
+          self.mustGetNative(JFrame.class).pack();
+          return nil;
+        }))
         .put(new Builtin("setVisible", P("visible"), (self, args) -> {
           self.mustGetNative(JFrame.class).setVisible(args[0].truthy());
           return nil;
@@ -215,6 +223,18 @@ public final class BigTalkSwing {
             Number.of(rect.width),
             Number.of(rect.height));
         }))
+        .put(new Builtin("setColor", P("color"), (self, args) -> {
+          self.mustGetNative(Graphics.class).setColor(args[0].mustGetNative(Color.class));
+          return nil;
+        }))
+        .put(new Builtin("fillRect", P("x", "y", "width", "height"), (self, args) -> {
+          self.mustGetNative(Graphics.class).fillRect(
+            (int) args[0].mustCast(Number.class).get(),
+            (int) args[1].mustCast(Number.class).get(),
+            (int) args[2].mustCast(Number.class).get(),
+            (int) args[3].mustCast(Number.class).get());
+          return nil;
+        }))
         .put(new Builtin("drawString", P("str", "x", "y"), (self, args) -> {
           self.mustGetNative(Graphics.class).drawString(
             args[0].mustCast(Str.class).get(),
@@ -232,6 +252,16 @@ public final class BigTalkSwing {
       .put("Button", buttonClass)
       .put("Canvas", canvasClass));
     addNativeModule("gui.swing.color", () -> new Scope(null)
+      .put(new Builtin("of", P("r", "g", "b", "/a"), (self, args) -> {
+        double r, g, b, alpha = 1.0;
+        r = args[0].mustCast(Number.class).get();
+        g = args[1].mustCast(Number.class).get();
+        b = args[2].mustCast(Number.class).get();
+        if (args.length == 4) {
+          alpha = args[3].mustCast(Number.class).get();
+        }
+        return asNative(new Color((float) r, (float) g, (float) b, (float) alpha));
+      }))
       .put("black", asNative(Color.black))
       .put("blue", asNative(Color.blue))
       .put("cyan", asNative(Color.cyan))

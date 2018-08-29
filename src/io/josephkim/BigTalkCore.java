@@ -575,18 +575,28 @@ public final class BigTalkCore {
   }
   public static final class PushAttribute extends Opcode {
     private final Symbol name;
+    private final Symbol methodName;
     PushAttribute(Token token, Symbol name) {
       super(token);
       this.name = name;
+      this.methodName = Symbol.of("__get_" + name.toString());
     }
     @Override public int step(Scope scope, ValueStack stack) {
       Value owner = stack.pop();
       Value value = owner.getattr(name);
       if (value == null) {
+        Value backupMethod = owner.getAttribute(methodName);
+        if (backupMethod == null) {
+          withToken(token, () -> {
+            throw new KeyError(
+              "No attribute " + name + " for " + owner.getTypename());
+          });
+        }
+        Value[] pointer = new Value[1];
         withToken(token, () -> {
-          throw new KeyError(
-            "No attribute " + name + " for " + owner.getTypename());
+          pointer[0] = backupMethod.call(owner);
         });
+        value = pointer[0];
       }
       stack.push(value);
       return NEXT;
@@ -594,14 +604,21 @@ public final class BigTalkCore {
   }
   public static final class PopAttribute extends Opcode {
     private final Symbol name;
+    private final Symbol methodName;
     PopAttribute(Token token, Symbol name) {
       super(token);
       this.name = name;
+      this.methodName = Symbol.of("__set_" + name.toString());
     }
     @Override public int step(Scope scope, ValueStack stack) {
       Value value = stack.pop();
       Value owner = stack.pop();
-      owner.setAttribute(name, value);
+      Value setterMethod = owner.getAttribute(methodName);
+      if (setterMethod != null) {
+        setterMethod.call(owner, value);
+      } else {
+        owner.setAttribute(name, value);
+      }
       stack.push(value);
       return NEXT;
     }
