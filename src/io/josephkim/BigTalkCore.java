@@ -44,6 +44,7 @@ public final class BigTalkCore {
   private static final int JUMP_NOT_SET = -3000;
   private static final Symbol thisSymbol = Symbol.of("this");
   private static final Symbol __protoSymbol = Symbol.of("__proto");
+  private static final Symbol __initSymbol = Symbol.of("__init");
   private static final Symbol __classSymbol = Symbol.of("__class");
   private static final Symbol __basesSymbol = Symbol.of("__bases");
   private static final Symbol __nameSymbol = Symbol.of("__name");
@@ -124,6 +125,10 @@ public final class BigTalkCore {
     .put(new Builtin("__call", P("*args"), (self, args) -> {
       // TODO: Call initializer
       Scope proto = self.mustGetAttribute(__protoSymbol).mustCast(Scope.class);
+      Value init = proto.getAttribute(__initSymbol);
+      if (init != null) {
+        init.call(proto, args);
+      }
       return new Scope(proto);
     }));
   static final Scope classClass = makeClass("Class", classProto);
@@ -180,6 +185,19 @@ public final class BigTalkCore {
     }))
     .put(new Builtin("strip", P(), (self, args) -> {
       return Str.of(self.mustCast(Str.class).value.trim());
+    }))
+    .put(new Builtin("join", P("arg"), (self, args) -> {
+      String sep = self.str();
+      StringBuilder sb = new StringBuilder();
+      boolean first = true;
+      Value iterator = args[0].iterator();
+      for (Value arg = iterator.next(); arg != null; arg = iterator.next()) {
+        if (!first) {
+          sb.append(sep);
+        }
+        sb.append(arg.str());
+      }
+      return Str.of(sb.toString());
     }));
   static final Scope stringClass = makeClass("String", stringProto);
   static final Scope listProto = new Scope(null)
@@ -190,6 +208,15 @@ public final class BigTalkCore {
     .put(new Builtin("__setitem", P("index", "value"), (self, args) -> {
       return self.mustCast(Arr.class).value
         .set((int) args[0].mustCast(Number.class).get(), args[1]);
+    }))
+    .put(new Builtin("__mul", P("n"), (self, args) -> {
+      ArrayList<Value> original = self.mustCast(Arr.class).value;
+      int n = (int) args[0].mustCast(Number.class).value;
+      ArrayList<Value> arr = new ArrayList<>();
+      for (int i = 0; i < n; i++) {
+        arr.addAll(original);
+      }
+      return new Arr(arr);
     }))
     .put(new Builtin("map", P("f"), (self, args) -> {
       ArrayList<Value> ret = new ArrayList<>();
@@ -259,9 +286,8 @@ public final class BigTalkCore {
       ArrayList<Value> values = map(sorted(names), Str::of);
       return new Arr(values);
     }))
-    .put(new Builtin("str", P("x"), (self, args) -> {
-      return Str.of(args[0].str());
-    }))
+    .put(new Builtin("str", P("x"), (self, args) ->
+      Str.of(args[0].str())))
     .put(new Builtin("repr", P("x"), (self, args) -> {
       return Str.of(args[0].repr());
     }));
@@ -1357,6 +1383,22 @@ public final class BigTalkCore {
     @Override public Scope getProto() {
       return listProto;
     }
+    @Override public Value iterator() {
+      return new ArrIterator(value);
+    }
+  }
+  public static final class ArrIterator extends SimpleValue {
+    private final ArrayList<Value> arr;
+    private int i = 0;
+    ArrIterator(ArrayList<Value> arr) {
+      this.arr = arr;
+    }
+    @Override public Scope getProto() {
+      return objectProto;
+    }
+    @Override public Value next() {
+      return i < arr.size() ? arr.get(i++) : null;
+    }
   }
   public static final class XSet extends SimpleValue {
     private final HashSet<Value> value;
@@ -1744,12 +1786,13 @@ public final class BigTalkCore {
     "nil", "true", "false",
     "as",
     "and", "or", "not", "is",
+    // "this",
 
     // Keywords from Javascript
     "break", "case", "catch", "class", "const", "continue", "debugger",
     "default", "delete", "do", "else", "export", "extends", "finally",
     "for", "function", "if", "import", "in", "instanceof", "new",
-    "return", "super", "switch", "this", "throw", "try", "typeof", "var",
+    "return", "super", "switch", "throw", "try", "typeof", "var",
     "void", "while", "with", "yield",
     "enum",
     "implements", "interface", "let", "package", "private", "protected",
@@ -2385,16 +2428,20 @@ public final class BigTalkCore {
           continue;
         }
         if (consume("[")) {
-          Expression index = skippingNewlineReturn(true, () -> {
-            Expression indexExpression = parseExpression();
+          List<Expression> args = skippingNewlineReturn(true, () -> {
+            List<Expression> expressions = new ArrayList<>();
+            expressions.add(parseExpression());
+            while (consume(",")) {
+              expressions.add(parseExpression());
+            }
             expect("]");
-            return indexExpression;
+            return expressions;
           });
           if (consume("=")) {
-            Expression value = parseExpression();
-            expression = methodCall(token, expression, __setitemSymbol, index, value);
+            args.add(parseExpression());
+            expression = methodCall(token, expression, __setitemSymbol, args);
           } else {
-            expression = methodCall(token, expression, __getitemSymbol, index);
+            expression = methodCall(token, expression, __getitemSymbol, args);
           }
           continue;
         }
@@ -2413,7 +2460,10 @@ public final class BigTalkCore {
       return parsePrefix();
     }
     static Expression methodCall(Token token, Expression owner, Symbol name, Expression... args) {
-      return new CallFunction(token, new GetAttribute(token, owner, name), listOf(args));
+      return methodCall(token, owner, name, listOf(args));
+    }
+    static Expression methodCall(Token token, Expression owner, Symbol name, List<Expression> args) {
+      return new CallFunction(token, new GetAttribute(token, owner, name), args);
     }
     static Expression functionCall(Token token, Value f, Expression... args) {
       return functionCall(token, f, listOf(args));
