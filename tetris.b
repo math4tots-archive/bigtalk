@@ -97,31 +97,44 @@ pieces = [
 
 print(List(pieces[0].coordinates()))
 
-board = Board(HEIGHT, WIDTH)
-board.place(pieces[0])
-print(board)
+def main() {
+  board = Board(HEIGHT, WIDTH)
+  live_piece = pieces[0]
 
-gui = simple.Gui(g -> % {
-  background_color = [0, 0, 0]
-  fill_color = [0.5, 0.5, 0]
+  gui = simple.Gui(g -> % {
+    background_color = [0, 0, 0]
+    fill_color = [0.5, 0.5, 0]
+    live_color = [0, 0.5, 0.5]
 
-  g.fillRect(0, 0, g.width, g.height, background_color)
+    g.fillRect(0, 0, g.width, g.height, background_color)
 
-  cell_height = g.height / board.height
-  cell_width = g.width / board.width
-  for row in range(board.height) {
-    for col in range(board.width) {
-      if (board[row, col]) {
-        g.fillRect(
-          col * cell_width,
-          row * cell_height,
-          cell_width,
-          cell_height,
-          fill_color)
+    def fill(row, col, color) {
+      g.fillRect(
+        col * cell_width,
+        row * cell_height,
+        cell_width,
+        cell_height,
+        color)
+    }
+
+    cell_height = g.height / board.height
+    cell_width = g.width / board.width
+    for row in range(board.height) {
+      for col in range(board.width) {
+        if (board[row, col]) {
+          fill(row, col, fill_color)
+        }
       }
     }
-  }
-})
-gui.title = 'Tetris'
-gui.size = [600, 1200]
-gui.start()
+
+    for point in live_piece.coordinates() {
+      [row, col] = point
+      fill(row, col, live_color)
+    }
+  })
+  gui.title = 'Tetris'
+  gui.size = [600, 1200]
+  gui.start()
+}
+
+main()
