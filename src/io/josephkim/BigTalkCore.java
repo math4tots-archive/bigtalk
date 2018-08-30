@@ -401,7 +401,8 @@ public final class BigTalkCore {
         indent += " ";
       }
       return
-        indent + "On line " + lineno() + " column " + colno() + "\n" +
+        indent + "On line " + lineno() + " column " + colno() +
+        " " + source.module + "\n" +
         indent + line() + "\n" +
         indent + strrep(" ", colno() - 1) + "*\n";
     }
@@ -1044,14 +1045,12 @@ public final class BigTalkCore {
       } else {
         Statement lastStatement =
           this.statements.remove(this.statements.size() - 1);
-        if (!(lastStatement instanceof ExpressionStatement)) {
-          throw new SyntaxError(
-            lastStatement.token,
-            "The last statement of a block expression must be " +
-            "an expression statement, but got " +
-            lastStatement.getClass().getSimpleName());
+        if (lastStatement instanceof ExpressionStatement) {
+          this.expression = ((ExpressionStatement) lastStatement).expression;
+        } else {
+          this.expression = new Literal(token, nil);
+          this.statements.add(lastStatement);
         }
-        this.expression = ((ExpressionStatement) lastStatement).expression;
       }
     }
     @Override public void compile(List<Opcode> out) {
@@ -1167,10 +1166,17 @@ public final class BigTalkCore {
     }
     @Override public void compile(List<Opcode> out) {
       condition.compile(out);
-      Branch jumpIf = new JumpIfNot(token);
-      out.add(jumpIf);
+      Branch jumpIfNot = new JumpIfNot(token);
+      out.add(jumpIfNot);
+
+      left.compile(out);
+      Branch jumpToEnd = new Jump(token);
+      out.add(jumpToEnd);
+
+      jumpIfNot.set(out.size());
       right.compile(out);
-      jumpIf.set(out.size());
+
+      jumpToEnd.set(out.size());
     }
   }
   public static abstract class Pattern {

@@ -16,6 +16,14 @@ class Board {
     this._rows = ([0] * height).map(x -> [0] * width)
   }
 
+  def __get_height() {
+    return this._height
+  }
+
+  def __get_width() {
+    return this._width
+  }
+
   def __setitem(row, col, value) {
     this._rows[row][col] = value
   }
@@ -30,6 +38,13 @@ class Board {
 
   def __repr() {
     return 'Board(' + str(this._height) + ', ' + str(this._width) + ')'
+  }
+
+  def place(piece) {
+    for point in piece.coordinates() {
+      [row, col] = point
+      this[row, col] = 1
+    }
   }
 }
 
@@ -83,11 +98,29 @@ pieces = [
 print(List(pieces[0].coordinates()))
 
 board = Board(HEIGHT, WIDTH)
+board.place(pieces[0])
 print(board)
 
 gui = simple.Gui(g -> % {
-  g.fillRect(0, 0, g.width, g.height, [0, 0, 1])
-  g.fillRect(0, 0, g.width / 2, g.height / 2, [1, 0, 0])
+  background_color = [0, 0, 0]
+  fill_color = [0.5, 0.5, 0]
+
+  g.fillRect(0, 0, g.width, g.height, background_color)
+
+  cell_height = g.height / board.height
+  cell_width = g.width / board.width
+  for row in range(board.height) {
+    for col in range(board.width) {
+      if (board[row, col]) {
+        g.fillRect(
+          col * cell_width,
+          row * cell_height,
+          cell_width,
+          cell_height,
+          fill_color)
+      }
+    }
+  }
 })
 gui.title = 'Tetris'
 gui.size = [600, 1200]

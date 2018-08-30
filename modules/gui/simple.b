@@ -36,6 +36,10 @@ class Gui {
   def start() {
     this._frame.setVisible(true)
   }
+
+  def repaint() {
+    this._frame.repaint()
+  }
 }
 
 
