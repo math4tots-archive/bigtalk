@@ -208,3 +208,17 @@ assert('a' <= 'a')
   assert.equal(f(), 10)
   assert.equal(f('hi'), 'hi')
 }
+
+"""splatting"""
+%% {
+  [a, b, c] = [1, 2, 3]
+  assert.equal([1, 2, 3], [a, b, c])
+
+  [x, *y] = ['a', 'b', 'c', 'd']
+  assert.equal(x, 'a')
+  assert.equal(y, ['b', 'c', 'd'])
+
+  [x, *y] = ['a']
+  assert.equal('a', x)
+  assert.equal([], y)
+}

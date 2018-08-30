@@ -570,6 +570,17 @@ public final class BigTalkCore {
       return "SaveVariable(" + name + ")";
     }
   }
+  public static final class SavePattern extends Opcode {
+    private final Pattern pattern;
+    SavePattern(Token token, Pattern pattern) {
+      super(token);
+      this.pattern = pattern;
+    }
+    @Override public int step(Scope scope, ValueStack stack) {
+      pattern.bind(scope, stack.peek());
+      return NEXT;
+    }
+  }
   public static final class PushVariable extends Opcode {
     private final Symbol name;
     PushVariable(Token token, Symbol name) {
@@ -953,6 +964,19 @@ public final class BigTalkCore {
       out.add(new SaveVariable(token, name));
     }
   }
+  public static final class SetPattern extends Expression {
+    public final Pattern pattern;
+    public final Expression expression;
+    public SetPattern(Token token, Pattern pattern, Expression expression) {
+      super(token);
+      this.pattern = pattern;
+      this.expression = expression;
+    }
+    @Override public void compile(List<Opcode> out) {
+      expression.compile(out);
+      out.add(new SavePattern(token, pattern));
+    }
+  }
   public static final class GetAttribute extends Expression {
     public final Expression owner;
     public final Symbol name;
@@ -1147,6 +1171,57 @@ public final class BigTalkCore {
       out.add(jumpIf);
       right.compile(out);
       jumpIf.set(out.size());
+    }
+  }
+  public static abstract class Pattern {
+    public final Token token;
+    Pattern(Token token) {
+      this.token = token;
+    }
+    public abstract void bind(Scope scope, Value value);
+  }
+  public static final class NamePattern extends Pattern {
+    public final Symbol name;
+    public NamePattern(Token token, Symbol name) {
+      super(token);
+      this.name = name;
+    }
+    @Override public void bind(Scope scope, Value value) {
+      scope.put(name, value);
+    }
+  }
+  public static final class ListPattern extends Pattern {
+    public final List<Pattern> patterns;
+    public final Symbol varname;
+    public ListPattern(Token token, List<Pattern> patterns, Symbol varname) {
+      super(token);
+      this.patterns = patterns;
+      this.varname = varname;
+    }
+    @Override public void bind(Scope scope, Value value) {
+      withToken(token, () -> {
+        Value iterator = value.iterator();
+        Value next = iterator.next();
+        for (Pattern subpattern: patterns) {
+          if (next == null) {
+            throw new TypeError("Not enough values to unpack");
+          }
+          subpattern.bind(scope, next);
+          next = iterator.next();
+        }
+        if (varname == null) {
+          if (next != null) {
+            throw new TypeError("Too many values to unpack");
+          }
+        } else {
+          ArrayList<Value> arr = new ArrayList<>();
+          while (next != null) {
+            arr.add(next);
+            next = iterator.next();
+          }
+          scope.put(varname, new Arr(arr));
+        }
+      });
     }
   }
 
@@ -2323,20 +2398,54 @@ public final class BigTalkCore {
     Expression parseExpression() {
       return parseTernary();
     }
-    Expression parsePrimary() {
+    Pattern parsePattern() {
       Token token = peek();
       if (consume("[")) {
-        List<Expression> expressions = new ArrayList<Expression>();
-        skippingNewline(true, () -> {
-          while (!consume("]")) {
-            expressions.add(parseExpression());
-            if (!consume(",")) {
-              expect("]");
-              break;
-            }
+        ArrayList<Pattern> subpatterns = new ArrayList<>();
+        Symbol varname = null;
+        while (!consume("]")) {
+          if (consume("*")) {
+            varname = Symbol.of((String) expect("ID").value);
+            expect("]");
+            break;
           }
-        });
-        return functionCall(token, makeListFn, expressions);
+          subpatterns.add(parsePattern());
+          if (!consume(",")) {
+            expect("]");
+            break;
+          }
+        }
+        return new ListPattern(token, subpatterns, varname);
+      }
+      return new NamePattern(token, Symbol.of((String) expect("ID").value));
+    }
+    Expression parsePrimary() {
+      Token token = peek();
+      if (at("[")) {
+        int save = i;
+        i = getMatchingIndex(i);
+        expect("]");
+        if (at("=")) {
+          i = save;
+          Pattern pattern = parsePattern();
+          expect("=");
+          Expression expression = parseExpression();
+          return new SetPattern(token, pattern, expression);
+        } else {
+          i = save;
+          expect("[");
+          List<Expression> expressions = new ArrayList<Expression>();
+          skippingNewline(true, () -> {
+            while (!consume("]")) {
+              expressions.add(parseExpression());
+              if (!consume(",")) {
+                expect("]");
+                break;
+              }
+            }
+          });
+          return functionCall(token, makeListFn, expressions);
+        }
       }
       if (consume("%")) {
         return parseBlockExpression();
