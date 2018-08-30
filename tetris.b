@@ -40,7 +40,7 @@ class Piece {
     this.col = col or 0
     if (do_check) {
       assert.equal(4, this.data.size())
-      data.map(row -> assert.equal(4, row.size()))
+      data.each(row -> assert.equal(4, row.size()))
     }
   }
 

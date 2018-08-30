@@ -218,6 +218,12 @@ public final class BigTalkCore {
       }
       return new Arr(arr);
     }))
+    .put(new Builtin("each", P("f"), (self, args) -> {
+      for (Value v: self.mustCast(Arr.class).value) {
+        args[0].call(nil, v);
+      }
+      return nil;
+    }))
     .put(new Builtin("map", P("f"), (self, args) -> {
       ArrayList<Value> ret = new ArrayList<>();
       for (Value v: self.mustCast(Arr.class).value) {
