@@ -28,9 +28,7 @@ class Gui {
   def __set_size(dimensions) {
     """Not all implementations of simple gui will support __set_size
     """
-    assert.equal(2, dimensions.size())
-    width = dimensions[0]
-    height = dimensions[1]
+    [width, height] = dimensions
     this._canvas.setPreferredSize(width, height)
     this._frame.pack()
   }
@@ -56,10 +54,7 @@ class Graphics {
   }
 
   def fillRect(x, y, width, height, rgb) {
-    assert.equal(3, rgb.size())
-    r = rgb[0]
-    g = rgb[1]
-    b = rgb[2]
+    [r, g, b] = rgb
     color_ = color.of(r, g, b, 1.0)
     this.graphics.setColor(color_)
     this.graphics.fillRect(x, y, width, height)
