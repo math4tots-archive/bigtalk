@@ -220,14 +220,14 @@ public final class BigTalkCore {
     }))
     .put(new Builtin("each", P("f"), (self, args) -> {
       for (Value v: self.mustCast(Arr.class).value) {
-        args[0].call(nil, v);
+        args[0].call(null, v);
       }
       return nil;
     }))
     .put(new Builtin("map", P("f"), (self, args) -> {
       ArrayList<Value> ret = new ArrayList<>();
       for (Value v: self.mustCast(Arr.class).value) {
-        ret.add(args[0].call(nil, v));
+        ret.add(args[0].call(null, v));
       }
       return new Arr(ret);
     }))
@@ -661,7 +661,7 @@ public final class BigTalkCore {
     @Override public int step(Scope scope, ValueStack stack) {
       Value[] args = stack.pop(argc);
       Value function = stack.pop();
-      withToken(token, () -> stack.push(function.call(nil, args)));
+      withToken(token, () -> stack.push(function.call(null, args)));
       return NEXT;
     }
     @Override public String toString() {
@@ -1839,16 +1839,16 @@ public final class BigTalkCore {
           "Expected at least " + names.length + " args but got " +
           args.length);
       }
-      for (int i = 0; i < names.length; i++) {
-        scope.put(names[i], args[i]);
+      int ap = 0;
+      for (int i = 0; i < names.length; i++, ap++) {
+        scope.put(names[i], args[ap]);
       }
-      for (int i = 0; i < opts.length && names.length + i < args.length; i++) {
-        scope.put(opts[i], args[i]);
+      int op = 0;
+      for (; op < opts.length && ap < args.length; op++, ap++) {
+        scope.put(opts[op], args[ap]);
       }
-      for (int i = args.length; i < names.length + opts.length; i++) {
-        int j = i - names.length;
-        Value value = defs[j];
-        scope.put(opts[j], value == null ? nil : value);
+      for (; op < opts.length; op++) {
+        scope.put(opts[op], defs[op]);
       }
       if (var == null) {
         if (names.length + opts.length < args.length) {

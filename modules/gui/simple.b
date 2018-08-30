@@ -39,6 +39,7 @@ class Gui {
 
   def repaint() {
     this._frame.repaint()
+    this._canvas.repaint()
   }
 }
 

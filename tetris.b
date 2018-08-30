@@ -97,44 +97,58 @@ pieces = [
 
 print(List(pieces[0].coordinates()))
 
-def main() {
-  board = Board(HEIGHT, WIDTH)
-  live_piece = pieces[0]
+class Game {
+  def __init(height, width) {
+    this.board = Board(height, width)
+    this.live_piece = pieces[0]
+    this.gui = gui = simple.Gui(g -> % {
+      board = this.board
+      live_piece = this.live_piece
+      background_color = [0, 0, 0]
+      fill_color = [0.5, 0.5, 0]
+      live_color = [0, 0.5, 0.5]
 
-  gui = simple.Gui(g -> % {
-    background_color = [0, 0, 0]
-    fill_color = [0.5, 0.5, 0]
-    live_color = [0, 0.5, 0.5]
+      g.fillRect(0, 0, g.width, g.height, background_color)
 
-    g.fillRect(0, 0, g.width, g.height, background_color)
+      def fill(row, col, color) {
+        g.fillRect(
+          col * cell_width,
+          row * cell_height,
+          cell_width,
+          cell_height,
+          color)
+      }
 
-    def fill(row, col, color) {
-      g.fillRect(
-        col * cell_width,
-        row * cell_height,
-        cell_width,
-        cell_height,
-        color)
-    }
-
-    cell_height = g.height / board.height
-    cell_width = g.width / board.width
-    for row in range(board.height) {
-      for col in range(board.width) {
-        if (board[row, col]) {
-          fill(row, col, fill_color)
+      cell_height = g.height / board.height
+      cell_width = g.width / board.width
+      for row in range(board.height) {
+        for col in range(board.width) {
+          if (board[row, col]) {
+            fill(row, col, fill_color)
+          }
         }
       }
-    }
 
-    for point in live_piece.coordinates() {
-      [row, col] = point
-      fill(row, col, live_color)
-    }
-  })
-  gui.title = 'Tetris'
-  gui.size = [600, 1200]
-  gui.start()
+      for point in live_piece.coordinates() {
+        [row, col] = point
+        fill(row, col, live_color)
+      }
+    })
+    this.gui.title = 'Tetris'
+    this.gui.size = [600, 1200]
+  }
+
+  def tick() {
+    print('tick called!')
+    this.live_piece = this.live_piece.move(1, 0)
+    this.gui.repaint()
+    wait_for(2, this.tick)
+  }
+
+  def start() {
+    this.tick()
+    this.gui.start()
+  }
 }
 
-main()
+Game(HEIGHT, WIDTH).start()

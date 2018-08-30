@@ -21,14 +21,29 @@ import java.util.Arrays;
 import java.util.Optional;
 import java.util.Scanner;
 import java.util.stream.Collectors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 
 public final class BigTalkDesktop {
   private static final String CHARSET_NAME = "UTF-8";
   private static final Charset CHARSET = StandardCharsets.UTF_8;
   private static final String BIGTALK_PATH = "BIGTALK_PATH";
 
+  private static final ScheduledExecutorService scheduler =
+    Executors.newScheduledThreadPool(1);
+
   public static final Scope globals = new Scope(null)
     .updateFrom(BigTalkCore.globals)
+    .put(new Builtin("wait_for", P("time", "callback"), (self, args) -> {
+      long delayMillis = (long) (args[0].mustCast(Number.class).get() * 1000);
+      Value callback = args[1];
+      scheduler.schedule(() -> {
+        callback.call(null);
+        return null;
+      }, delayMillis, TimeUnit.MILLISECONDS);
+      return nil;
+    }))
     .put(new Builtin("print", P("x"), (self, args) -> {
       System.out.println(args[0]);
       return nil;
