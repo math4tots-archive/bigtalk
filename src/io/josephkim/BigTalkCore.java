@@ -123,13 +123,13 @@ public final class BigTalkCore {
       return Str.of("<class " + self.mustGetAttribute(__nameSymbol) + ">");
     }))
     .put(new Builtin("__call", P("*args"), (self, args) -> {
-      // TODO: Call initializer
       Scope proto = self.mustGetAttribute(__protoSymbol).mustCast(Scope.class);
       Value init = proto.getAttribute(__initSymbol);
+      Scope object = new Scope(proto);
       if (init != null) {
-        init.call(proto, args);
+        init.call(object, args);
       }
-      return new Scope(proto);
+      return object;
     }));
   static final Scope classClass = makeClass("Class", classProto);
   static final Scope nativeProto = new Scope(null)
@@ -236,7 +236,17 @@ public final class BigTalkCore {
     .put(new Builtin("size", P(), (self, args) -> {
       return Number.of(self.mustCast(Arr.class).value.size());
     }));
-  static final Scope listClass = makeClass("List", listProto);
+  static final Scope listClass = makeClass("List", listProto)
+    .put(new Builtin("__call", P("xs"), (self, args) -> {
+      ArrayList<Value> arr = new ArrayList<>();
+      Value iterator = args[0].iterator();
+      Value next = iterator.next();
+      while (next != null) {
+        arr.add(next);
+        next = iterator.next();
+      }
+      return new Arr(arr);
+    }));
   static final Scope setProto = new Scope(null)
     .put(new Builtin("size", P(), (self, args) ->
       Number.of(self.mustCast(XSet.class).value.size())));
@@ -267,6 +277,7 @@ public final class BigTalkCore {
     .put("Object", objectClass)
     .put("Class", classClass)
     .put("Function", functionClass)
+    .put("List", listClass)
     .put("assert", makeSingleton("assert")
       .put(new Builtin("__call", P("x"), (self, args) -> {
         if (!args[0].truthy()) {
@@ -292,7 +303,7 @@ public final class BigTalkCore {
       return Str.of(args[0].repr());
     }));
   static Parameters P(String... names) {
-    return new Parameters(names);
+    return Parameters.of(names);
   }
   private static final Importer importer = new Importer()
     .put("_globals", () -> BigTalkCore.importer.getGlobals());
@@ -1686,10 +1697,7 @@ public final class BigTalkCore {
     }
   }
   public static final class Parameters {
-    private final Symbol[] names;
-    private final Symbol[] opts;
-    private final Symbol var;
-    public Parameters(String... parts) {
+    static Parameters of(String... parts) {
       List<Symbol> names = new ArrayList<>();
       List<Symbol> opts = new ArrayList<>();
       Symbol var = null;
@@ -1702,14 +1710,26 @@ public final class BigTalkCore {
           names.add(Symbol.of(part));
         }
       }
-      this.names = names.toArray(new Symbol[0]);
-      this.opts = opts.toArray(new Symbol[0]);
-      this.var = var;
+      return new Parameters(
+        names.toArray(new Symbol[0]), opts.toArray(new Symbol[0]), null, var);
     }
-    public Parameters(Symbol[] names, Symbol[] opts, Symbol var) {
+    private final Symbol[] names;
+    private final Symbol[] opts;
+    private final Value[] defs;  // assert(defs.length == opts.length)
+    private final Symbol var;
+    public Parameters(Symbol[] names, Symbol[] opts, Value[] defs, Symbol var) {
       this.names = names == null ? new Symbol[0] : names;
       this.opts = opts == null ? new Symbol[0] : opts;
+      this.defs = defs == null ? new Value[opts.length] : defs;
       this.var = var;
+      if (this.opts.length != this.defs.length) {
+        throw new InternalError(this.opts.length + ", " + this.defs.length);
+      }
+      for (int i = 0; i < this.defs.length; i++) {
+        if (this.defs[i] == null) {
+          this.defs[i] = nil;
+        }
+      }
     }
     public void checkOnly(Value owner, Value... args) {
       if (args.length < names.length) {
@@ -1739,7 +1759,9 @@ public final class BigTalkCore {
         scope.put(opts[i], args[i]);
       }
       for (int i = args.length; i < names.length + opts.length; i++) {
-        scope.put(opts[i - names.length], nil);
+        int j = i - names.length;
+        Value value = defs[j];
+        scope.put(opts[j], value == null ? nil : value);
       }
       if (var == null) {
         if (names.length + opts.length < args.length) {
@@ -2137,40 +2159,52 @@ public final class BigTalkCore {
         return new Block(token, statements);
       });
     }
+    Value parseConstant() {
+      // TODO: Allow constant expressions that aren't just
+      // pure literal expressions.
+      Token token = peek();
+      Expression expression = parseExpression();
+      if (!(expression instanceof Literal)) {
+        throw new SyntaxError(token, "Expected constant expression");
+      }
+      return ((Literal) expression).value;
+    }
     Parameters parseParameters() {
       expect("(");
       List<Symbol> names = new ArrayList<>();
       List<Symbol> opts = new ArrayList<>();
+      List<Value> defs = new ArrayList<>();
       Symbol var = null;
-      boolean done = false;
-      while (at("ID")) {
-        names.add(Symbol.of((String) expect("ID").value));
+      boolean seenOptional = false;
+      while (!consume(")")) {
+        if (consume("*")) {
+          var = Symbol.of((String) expect("ID").value);
+          expect(")");
+          break;
+        }
+        Symbol name = Symbol.of((String) expect("ID").value);
+        if (consume("=")) {
+          seenOptional = true;
+          opts.add(name);
+          defs.add(parseConstant());
+        } else {
+          if (seenOptional) {
+            throw new SyntaxError(
+              peek(),
+              "Non-optional arguments cannot come after optional ones");
+          }
+          names.add(name);
+        }
         if (!consume(",")) {
           expect(")");
-          done = true;
           break;
         }
       }
-      if (!done) {
-        while (consume("/")) {
-          opts.add(Symbol.of((String) expect("ID").value));
-          if (!consume(",")) {
-            expect(")");
-            done = true;
-            break;
-          }
-        }
-      }
-      if (!done) {
-        if (consume("*")) {
-          var = Symbol.of((String) expect("ID").value);
-        }
-      }
-      if (!done) {
-        expect(")");
-      }
       return new Parameters(
-        names.toArray(new Symbol[0]), opts.toArray(new Symbol[0]), var);
+        names.toArray(new Symbol[0]),
+        opts.toArray(new Symbol[0]),
+        defs.toArray(new Value[0]),
+        var);
     }
     BaseDef parseDef() {
       Token token = expect("def");

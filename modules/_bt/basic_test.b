@@ -198,3 +198,13 @@ assert(not ('a' > 'b'))
 assert(not ('a' >= 'b'))
 assert('a' <= 'b')
 assert('a' <= 'a')
+
+"""default function arguments"""
+%% {
+  def f(x = 10) {
+    return x
+  }
+
+  assert.equal(f(), 10)
+  assert.equal(f('hi'), 'hi')
+}
