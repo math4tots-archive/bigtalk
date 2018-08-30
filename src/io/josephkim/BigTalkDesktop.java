@@ -30,15 +30,21 @@ public final class BigTalkDesktop {
   private static final Charset CHARSET = StandardCharsets.UTF_8;
   private static final String BIGTALK_PATH = "BIGTALK_PATH";
 
-  private static final ScheduledExecutorService scheduler =
-    Executors.newScheduledThreadPool(1);
+  private static ScheduledExecutorService scheduler;
+
+  private static ScheduledExecutorService getScheduler() {
+    if (scheduler == null) {
+      scheduler = Executors.newScheduledThreadPool(1);
+    }
+    return scheduler;
+  }
 
   public static final Scope globals = new Scope(null)
     .updateFrom(BigTalkCore.globals)
     .put(new Builtin("wait_for", P("time", "callback"), (self, args) -> {
       long delayMillis = (long) (args[0].mustCast(Number.class).get() * 1000);
       Value callback = args[1];
-      scheduler.schedule(() -> {
+      getScheduler().schedule(() -> {
         callback.call(null);
         return null;
       }, delayMillis, TimeUnit.MILLISECONDS);

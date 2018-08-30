@@ -11,9 +11,11 @@ import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseListener;
+import java.awt.event.MouseWheelEvent;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Point;
@@ -34,6 +36,25 @@ public final class BigTalkSwing {
         .put(new Builtin("getSize", P(), (self, args) -> {
           Dimension dim = self.mustGetNative(Component.class).getSize();
           return Arr.of(Number.of(dim.width), Number.of(dim.height));
+        }))
+        .put(new Builtin("addKeyListener", P("listener"), (self, args) -> {
+          Value listener = args[0];
+          Value keyPressed = listener.mustGetAttribute(Symbol.of("keyPressed"));
+          Value keyReleased = listener.mustGetAttribute(Symbol.of("keyReleased"));
+          Value keyTyped = listener.mustGetAttribute(Symbol.of("keyTyped"));
+          self.mustGetNative(Component.class).addKeyListener(new KeyListener() {
+            @Override public void keyPressed(KeyEvent e) {
+              System.out.println("Key pressed!");
+              keyPressed.call(listener, asNative(e));
+            }
+            @Override public void keyReleased(KeyEvent e) {
+              keyReleased.call(listener, asNative(e));
+            }
+            @Override public void keyTyped(KeyEvent e) {
+              keyTyped.call(listener, asNative(e));
+            }
+          });
+          return nil;
         }))
         .put(new Builtin("addMouseListener", P("listener"), (self, args) -> {
           Value listener = args[0];
@@ -183,6 +204,16 @@ public final class BigTalkSwing {
           self.mustGetNative(InputEvent.class).isShiftDown() ? tru : fal))
         .put(new Builtin("getModifiersExText", P(), (self, args) ->
           Str.of(InputEvent.getModifiersExText(self.mustGetNative(InputEvent.class).getModifiersEx())))));
+  static final Scope keyEventClass =
+    makeNativeClass(
+      KeyEvent.class,
+      "KeyEvent",
+      listOf(inputEventClass),
+      new Scope(null)
+        .put(new Builtin("getKeyCode", P(), (self, args) ->
+          Number.of(self.mustGetNative(KeyEvent.class).getKeyCode())))
+        .put(new Builtin("getKeyText", P(), (self, args) ->
+          Str.of(KeyEvent.getKeyText(self.mustGetNative(KeyEvent.class).getKeyCode())))));
   static final Scope mouseEventClass =
     makeNativeClass(
       MouseEvent.class,

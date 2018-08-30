@@ -136,6 +136,22 @@ class Game {
     })
     this.gui.title = 'Tetris'
     this.gui.size = [600, 1200]
+    this.gui.on('key', event -> % {
+      switch(event.key,
+        'D', nil,
+        'Right', () -> {
+          this.live_piece = this.live_piece.move(0, 1)
+        },
+        'A', nil,
+        'Left', () -> {
+          this.live_piece = this.live_piece.move(0, -1)
+        },
+        () -> {
+          print('Unrecognized key ' + event.key)
+        }
+      )
+      gui.repaint()
+    })
   }
 
   def tick() {

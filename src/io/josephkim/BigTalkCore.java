@@ -1912,13 +1912,13 @@ public final class BigTalkCore {
     "nil", "true", "false",
     "as",
     "and", "or", "not", "is",
-    // "this",
+    // "this", "switch",
 
     // Keywords from Javascript
     "break", "case", "catch", "class", "const", "continue", "debugger",
     "default", "delete", "do", "else", "export", "extends", "finally",
     "for", "function", "if", "import", "in", "instanceof", "new",
-    "return", "super", "switch", "throw", "try", "typeof", "var",
+    "return", "super", "throw", "try", "typeof", "var",
     "void", "while", "with", "yield",
     "enum",
     "implements", "interface", "let", "package", "private", "protected",
@@ -2204,6 +2204,9 @@ public final class BigTalkCore {
     void consumeStatementDelimiters() {
       while (consume(";") || consume("NEWLINE"));
     }
+    boolean atStatementDelimiter() {
+      return at("EOF") || at(";") || at("NEWLINE");
+    }
     void expectStatementDelimiter() {
       if (!at("EOF") && !consume(";")) {
         expect("NEWLINE");
@@ -2379,7 +2382,9 @@ public final class BigTalkCore {
             new CallFunction(token, def, new ArrayList<>())));
       }
       if (consume("return")) {
-        Expression expression = parseExpression();
+        Expression expression = atStatementDelimiter() ?
+          new Literal(token, nil) :
+          parseExpression();
         expectStatementDelimiter();
         return new Return(token, expression);
       }

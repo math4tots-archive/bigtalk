@@ -41,8 +41,39 @@ class Gui {
     this._frame.repaint()
     this._canvas.repaint()
   }
+
+  def on(event_type, callback) {
+    if (event_type == 'key') {
+      print('adding key listener')
+      this._frame.addKeyListener(new KeyListener {
+        def keyPressed(event) {
+          callback(KeyEvent(event))
+        }
+        def keyReleased(event) {
+        }
+        def keyTyped(event) {
+        }
+      })
+    } else {
+      "TODO: throw value error"
+      assert(false)
+    }
+  }
 }
 
+class KeyEvent {
+  def __init(keyEvent) {
+    this._keyEvent = keyEvent
+  }
+
+  def __get_key() {
+    return this._keyEvent.getKeyText()
+  }
+
+  def __repr() {
+    return 'KeyEvent(' + this._keyEvent.getKeyText() + ')'
+  }
+}
 
 class Graphics {
   def __init(graphics, gui) {
