@@ -22,19 +22,20 @@ import java.util.Optional;
 import java.util.Scanner;
 import java.util.stream.Collectors;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 public final class BigTalkDesktop {
   private static final String CHARSET_NAME = "UTF-8";
   private static final Charset CHARSET = StandardCharsets.UTF_8;
   private static final String BIGTALK_PATH = "BIGTALK_PATH";
 
-  private static ScheduledExecutorService scheduler;
+  private static ScheduledThreadPoolExecutor scheduler;
 
-  private static ScheduledExecutorService getScheduler() {
+  private static ScheduledThreadPoolExecutor getScheduler() {
     if (scheduler == null) {
-      scheduler = Executors.newScheduledThreadPool(1);
+      scheduler = new ScheduledThreadPoolExecutor(1);
+      scheduler.setCorePoolSize(0);
+      scheduler.setKeepAliveTime(0, TimeUnit.MILLISECONDS);
     }
     return scheduler;
   }
