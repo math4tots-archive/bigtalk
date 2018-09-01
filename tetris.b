@@ -46,21 +46,61 @@ class Board {
       this[row, col] = 1
     }
   }
+
+  def contains_point(point) {
+    [r, c] = point
+    return (
+      0 <= r and r < this.height and
+      0 <= c and c < this.width)
+  }
 }
 
 class Piece {
-  def __init(data, row = nil, col = nil, do_check = true) {
+  def __init(data, row = 0, col = 0, do_check = true) {
     this.data = data
-    this.row = row or 0
-    this.col = col or 0
+    this.row = row
+    this.col = col
     if (do_check) {
       assert.equal(4, this.data.size())
       data.each(row -> assert.equal(4, row.size()))
     }
   }
 
+  def __eq(other) {
+    return (type(other) == Piece and
+      this.data == other.data and
+      this.row == other.row and
+      this.col == other.col)
+  }
+
+  def within(board) {
+    return List(this.coordinates()).all(board.contains_point)
+  }
+
+  def conflicts_with_board(board) {
+    return this.coordinates().any(point -> % {
+      [r, c] = point
+      return not board.contains_point(point) or board[r, c]
+    })
+  }
+
+  def move_to(r, c) {
+    return Piece(this.data, r, c, false)
+  }
+
   def move(dr, dc) {
-    return Piece(this.data, this.row + dr, this.col + dc, false)
+    return this.move_to(this.row + dr, this.col + dc)
+  }
+
+  def rotate() {
+    "Rotate 90 degrees clockwise"
+    new_data = ([0] * 4).map(_ -> [0] * 4)
+    for row in range(4) {
+      for col in range(4) {
+        new_data[col][3 - row] = this.data[row][col]
+      }
+    }
+    return Piece(new_data, this.row, this.col, false)
   }
 
   def* coordinates() {
@@ -88,20 +128,24 @@ pieces = [
     [0, 0, 0, 0],
   ]),
   Piece([
-    [0, 0, 0, 0],
     [0, 0, 1, 0],
-    [0, 1, 1, 1],
+    [0, 1, 1, 0],
+    [0, 0, 1, 0],
     [0, 0, 0, 0],
   ]),
 ]
 
 
 def main() {
+  def spawn_piece() {
+    return pieces[0].move_to(0, board.width // 2 - 2)
+  }
+
   board = Board(HEIGHT, WIDTH)
-  live_piece = [pieces[0]]
   background_color = [0, 0, 0]
   fill_color = [0.5, 0.5, 0]
   live_color = [0, 0.5, 0.5]
+  live_piece = [spawn_piece()]
   gui = simple.Gui(g -> % {
     g.fill_rectangle(0, 0, g.width, g.height, background_color)
 
@@ -132,13 +176,21 @@ def main() {
   gui.size = [600, 1200]
   gui.on('key', event -> % {
     switch(event.key,
-      'D', nil,
-      'Right', () -> {
-        live_piece[0] = live_piece[0].move(0, 1)
-      },
       'A', nil,
       'Left', () -> {
-        live_piece[0] = live_piece[0].move(0, -1)
+        move_piece(0, -1)
+      },
+      'D', nil,
+      'Right', () -> {
+        move_piece(0, 1)
+      },
+      'S', nil,
+      'Down', () -> {
+        move_piece_down()
+      },
+      'W', nil,
+      'Up', () -> {
+        rotate_piece()
       },
       () -> {
         print('Unrecognized key ' + event.key)
@@ -146,14 +198,48 @@ def main() {
     gui.repaint()
   })
 
+  def rotate_piece() {
+    new_piece = live_piece[0].rotate()
+    if (new_piece.conflicts_with_board(board)) {
+      if (not new_piece.move(0, -1).conflicts_with_board(board)) {
+        new_piece = new_piece.move(0, -1)
+      } else if (not new_piece.move(0, 1).conflicts_with_board(board)) {
+        new_piece = new_piece.move(0, 1)
+      } else if (not new_piece.move(0, -2).conflicts_with_board(board)) {
+        new_piece = new_piece.move(0, -2)
+      } else if (not new_piece.move(0, 2).conflicts_with_board(board)) {
+        new_piece = new_piece.move(0, 2)
+      } else {
+        new_piece = live_piece[0]
+      }
+    }
+    live_piece[0] = new_piece
+  }
+
+  def move_piece(dr, dc) {
+    new_piece = live_piece[0].move(dr, dc)
+    if (not new_piece.conflicts_with_board(board)) {
+      live_piece[0] = new_piece
+    }
+  }
+
+  def move_piece_down() {
+    old_piece = live_piece[0]
+    move_piece(1, 0)
+    if (old_piece == live_piece[0]) {
+      board.place(old_piece)
+      live_piece[0] = spawn_piece()
+    }
+  }
+
   def tick() {
     print('tick called!')
-    live_piece[0] = live_piece[0].move(1, 0)
+    move_piece_down()
     gui.repaint()
     wait_for(2, tick)
   }
 
-  tick()
+  wait_for(2, tick)
   gui.start()
 }
 

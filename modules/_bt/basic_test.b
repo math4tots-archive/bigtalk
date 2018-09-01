@@ -222,3 +222,10 @@ assert('a' <= 'a')
   assert.equal('a', x)
   assert.equal([], y)
 }
+
+%% {
+  assert([1, 2, 3].any(x -> x))
+  assert([1, 2, 3].all(x -> x))
+  assert([0, 1].any(x -> x))
+  assert(not [0, 1].all(x -> x))
+}

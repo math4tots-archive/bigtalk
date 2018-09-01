@@ -200,6 +200,39 @@ public final class BigTalkCore {
       return Str.of(sb.toString());
     }));
   static final Scope stringClass = makeClass("String", stringProto);
+  static final Scope iterableProto = new Scope(null)
+    .put(new Builtin("all", P("test"), (self, args) -> {
+      Value iterator = self.iterator();
+      Value next = iterator.next();
+      while (next != null) {
+        if (!args[0].call(null, next).truthy()) {
+          return fal;
+        }
+        next = iterator.next();
+      }
+      return tru;
+    }))
+    .put(new Builtin("any", P("test"), (self, args) -> {
+      Value iterator = self.iterator();
+      Value next = iterator.next();
+      while (next != null) {
+        if (args[0].call(null, next).truthy()) {
+          return tru;
+        }
+        next = iterator.next();
+      }
+      return fal;
+    }))
+    .put(new Builtin("each", P("f"), (self, args) -> {
+      Value iterator = self.iterator();
+      Value next = iterator.next();
+      while (next != null) {
+        args[0].call(null, next);
+        next = iterator.next();
+      }
+      return nil;
+    }));
+  static final Scope iterableClass = makeClass("Iterable", iterableProto);
   static final Scope listProto = new Scope(null)
     .put(new Builtin("__getitem", P("index"), (self, args) -> {
       return self.mustCast(Arr.class).value
@@ -217,12 +250,6 @@ public final class BigTalkCore {
         arr.addAll(original);
       }
       return new Arr(arr);
-    }))
-    .put(new Builtin("each", P("f"), (self, args) -> {
-      for (Value v: self.mustCast(Arr.class).value) {
-        args[0].call(null, v);
-      }
-      return nil;
     }))
     .put(new Builtin("map", P("f"), (self, args) -> {
       ArrayList<Value> ret = new ArrayList<>();
@@ -242,7 +269,7 @@ public final class BigTalkCore {
     .put(new Builtin("size", P(), (self, args) -> {
       return Number.of(self.mustCast(Arr.class).value.size());
     }));
-  static final Scope listClass = makeClass("List", listProto)
+  static final Scope listClass = makeClass("List", listOf(iterableClass), listProto)
     .put(new Builtin("__call", P("xs"), (self, args) -> {
       ArrayList<Value> arr = new ArrayList<>();
       Value iterator = args[0].iterator();
@@ -278,7 +305,7 @@ public final class BigTalkCore {
     }));
   static final Scope functionClass = makeClass("Function", functionProto);
   static final Scope generatorObjectProto = new Scope(null);
-  static final Scope generatorObjectClass = makeClass("GeneratorObject", generatorObjectProto);
+  static final Scope generatorObjectClass = makeClass("GeneratorObject", listOf(iterableClass), generatorObjectProto);
   static final Scope globals = new Scope(null)
     .put("Object", objectClass)
     .put("Class", classClass)
@@ -302,6 +329,13 @@ public final class BigTalkCore {
         map(args[0].mustCast(Scope.class).table.keySet(), Symbol::toString);
       ArrayList<Value> values = map(sorted(names), Str::of);
       return new Arr(values);
+    }))
+    .put(new Builtin("type", P("obj"), (self, args) -> {
+      Value klass = self.getAttribute(__classSymbol);
+      if (klass != null) {
+        return klass;
+      }
+      return objectClass;
     }))
     .put(new Builtin("str", P("x"), (self, args) ->
       Str.of(args[0].str())))
