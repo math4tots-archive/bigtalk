@@ -63,6 +63,8 @@ public final class BigTalkCore {
   private static final Symbol __ltSymbol = Symbol.of("__lt");
   private static final Symbol __iterSymbol = Symbol.of("__iter");
   private static final Symbol __nextSymbol = Symbol.of("__next");
+  private static final Symbol __lenSymbol = Symbol.of("__len");
+  private static final Symbol __ancestorsSymbol = Symbol.of("__ancestors");
   private static final Symbol lambdaName = Symbol.of("$lambda");
   private static final Map<Class<?>, Scope> nativeProtoTable = new HashMap<>();
   static final Nil nil = new Nil();
@@ -124,6 +126,10 @@ public final class BigTalkCore {
   static final Scope objectProto = new Scope(null);
   static final Scope objectClass = makeClass("Object", makeEmptyList(), objectProto);
   static final Scope classProto = new Scope(null)
+    .put(new Builtin("__lt", P("other"), (self, args) -> {
+      return isBaseClass(
+        args[0].mustCast(Scope.class), self.mustCast(Scope.class)) ? tru : fal;
+    }))
     .put(new Builtin("__repr", P(), (self, args) -> {
       return Str.of("<class " + self.mustGetAttribute(__nameSymbol) + ">");
     }))
@@ -240,6 +246,11 @@ public final class BigTalkCore {
       return nil;
     }));
   static final Scope iterableClass = makeClass("Iterable", iterableProto);
+  static final Scope randomAccessContainerClass =
+    makeClass(
+      "RandomAccessContainer",
+      listOf(iterableClass),
+      new Scope(null));
   static final Scope listProto = new Scope(null)
     .put(new Builtin("__getitem", P("index"), (self, args) -> {
       return self.mustCast(Arr.class).value
@@ -273,10 +284,11 @@ public final class BigTalkCore {
       List<Value> arr = self.mustCast(Arr.class).value;
       return arr.remove(arr.size() - 1);
     }))
-    .put(new Builtin("size", P(), (self, args) -> {
+    .put(new Builtin("__len", P(), (self, args) -> {
       return Number.of(self.mustCast(Arr.class).value.size());
     }));
-  static final Scope listClass = makeClass("List", listOf(iterableClass), listProto)
+  static final Scope listClass =
+    makeClass("List", listOf(randomAccessContainerClass), listProto)
     .put(new Builtin("__call", P("xs"), (self, args) -> {
       ArrayList<Value> arr = new ArrayList<>();
       Value iterator = args[0].iterator();
@@ -288,11 +300,11 @@ public final class BigTalkCore {
       return new Arr(arr);
     }));
   static final Scope setProto = new Scope(null)
-    .put(new Builtin("size", P(), (self, args) ->
+    .put(new Builtin("__len", P(), (self, args) ->
       Number.of(self.mustCast(XSet.class).value.size())));
   static final Scope setClass = makeClass("Set", setProto);
   static final Scope mapProto = new Scope(null)
-    .put(new Builtin("size", P(), (self, args) ->
+    .put(new Builtin("__len", P(), (self, args) ->
       Number.of(self.mustCast(XSet.class).value.size())));
   static final Scope mapClass = makeClass("Map", mapProto);
   static final Scope singletonProto = new Scope(null)
@@ -346,6 +358,7 @@ public final class BigTalkCore {
     .put("Class", classClass)
     .put("Function", functionClass)
     .put("List", listClass)
+    .put("RandomAccessContainer", randomAccessContainerClass)
     .put("assert", makeSingleton("assert")
       .put(new Builtin("__call", P("x"), (self, args) -> {
         if (!args[0].truthy()) {
@@ -365,12 +378,17 @@ public final class BigTalkCore {
       ArrayList<Value> values = map(sorted(names), Str::of);
       return new Arr(values);
     }))
+    .put(new Builtin("iter", P("obj"), (self, args) -> args[0].iterator()))
     .put(new Builtin("type", P("obj"), (self, args) -> {
       Value klass = args[0].getAttribute(__classSymbol);
       if (klass != null) {
         return klass;
       }
       return objectClass;
+    }))
+    .put(new Builtin("len", P("obj"), (self, args) -> {
+      Value method = args[0].getAttribute(__lenSymbol);
+      return method.call(args[0], new Value[0]);
     }))
     .put(new Builtin("str", P("x"), (self, args) ->
       Str.of(args[0].str())))
@@ -1365,6 +1383,9 @@ public final class BigTalkCore {
     public Value call(Value owner, Value... args) {
       throw new TypeError(getTypename() + " is not a function");
     }
+    public Value callMethod(Symbol name, Value... args) {
+      return mustGetAttribute(name).call(this, args);
+    }
     public final Value getattr(Symbol key) {
       Value value = getAttribute(key);
       if (value != null) {
@@ -1397,7 +1418,7 @@ public final class BigTalkCore {
       return repr();
     }
     public boolean lessThan(Value other) {
-      throw new TypeError("lessThan not supported");
+      return callMethod(__ltSymbol, other).truthy();
     }
     @Override public String toString() {
       return str();
@@ -1953,14 +1974,21 @@ public final class BigTalkCore {
     }
   }
   public static Scope makeClass(String name, Iterable<Scope> bases, Scope proto) {
+    HashSet<Value> ancestors = new HashSet<>();
     for (Scope base: bases) {
       Scope baseProto = base.mustGetAttribute(__protoSymbol).mustCast(Scope.class);
       proto.updateIfMissing(baseProto);
+
+      ancestors.addAll(
+        base.mustGetAttribute(__ancestorsSymbol).mustCast(XSet.class).value);
     }
+
     Scope klass = new Scope(classProto);
+    ancestors.add(klass);
     klass.setAttribute(__nameSymbol, Str.of(name));
     klass.setAttribute(__protoSymbol, proto);
     klass.setAttribute(__basesSymbol, new Arr(toList(bases)));
+    klass.setAttribute(__ancestorsSymbol, new XSet(ancestors));
     proto.setAttribute(__classSymbol, klass);
     return klass;
   }
@@ -1991,6 +2019,20 @@ public final class BigTalkCore {
     Scope singleton = new Scope(singletonProto);
     singleton.setAttribute(__nameSymbol, Str.of(name));
     return singleton;
+  }
+  public static void expectType(Value value, Scope expected) {
+    Scope actual = value.getAttribute(__classSymbol).mustCast(Scope.class);
+    if (actual == null) {
+      actual = objectClass;
+    }
+    if (!isBaseClass(expected, actual)) {
+      throw new TypeError("Expected " + expected + " but got " + actual);
+    }
+  }
+  public static boolean isBaseClass(Scope base, Scope derived) {
+    HashSet<Value> ancestors =
+      derived.mustGetAttribute(__ancestorsSymbol).mustCast(XSet.class).value;
+    return ancestors.contains(base);
   }
 
   //// Lexer

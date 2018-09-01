@@ -114,8 +114,9 @@ assert.equal(16 // 3, 5)
   assert.equal(xs, [1, 2])
 
   def* gen2() {
-    yield [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-           1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1].size()
+    yield len(
+        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1])
   }
   xs = []
   for x in gen2() {
@@ -184,7 +185,7 @@ assert.equal(16 // 3, 5)
 
 """list"""
 assert.equal([1, 2, 3], [1, 2, 3])
-assert.equal([1, 2, 3].size(), 3)
+assert.equal(len([1, 2, 3]), 3)
 assert.equal(
   [1, 2, 3].map((x) -> x + 1),
   [2, 3, 4])

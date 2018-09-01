@@ -81,8 +81,8 @@ class Piece {
     this.row = row
     this.col = col
     if (do_check) {
-      assert.equal(4, this.data.size())
-      data.each(row -> assert.equal(4, row.size()))
+      assert.equal(4, len(this.data))
+      data.each(row -> assert.equal(4, len(row)))
     }
   }
 

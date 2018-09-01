@@ -1,6 +1,6 @@
 import _globals as globals
 
-class Range {
+class Range(RandomAccessContainer) {
   def __init(start, end) {
     this.start = start
     this.end = end
@@ -18,13 +18,13 @@ class Range {
   }
 
   def __getitem(i) {
-    if (i < 0 or i >= this.size()) {
+    if (i < 0 or i >= len(this)) {
       fail("Index " + str(i) + " out of bounds")
     }
     return this.start + i
   }
 
-  def size() {
+  def __len() {
     return this.end - this.start
   }
 }
@@ -36,7 +36,7 @@ class ReversedRandomAccessContainer {
 
   def* __iter() {
     container = this.container
-    i = container.size() - 1
+    i = len(container) - 1
     while (i >= 0) {
       yield container[i]
       i = i - 1
@@ -44,23 +44,22 @@ class ReversedRandomAccessContainer {
   }
 
   def __getitem(i) {
-    size = this.container.size()
+    size = len(this.container)
     return this.container[size - 1 - i]
   }
 
-  def size() {
-    return this.container.size()
+  def __len() {
+    return len(this.container)
   }
 }
 
 globals.reversed = def reversed(xs) {
-  """TODO: Be more general about when to use ReversedRandomAccessContainer"""
-  if (type(xs) is Range) {
+  if (type(xs) < RandomAccessContainer) {
     return ReversedRandomAccessContainer(xs)
   }
   list = List(xs)
   reversed_list = []
-  i = list.size() - 1
+  i = len(list) - 1
   while (i >= 0) {
     reversed_list.push(list[i])
     i = i - 1
@@ -78,20 +77,20 @@ globals.range = def range(start, end=nil) {
 
 globals.switch = def switch(value, *parts) {
   i = 0
-  while (i + 1 < parts.size()) {
+  while (i + 1 < len(parts)) {
     if (parts[i] == value) {
       callback = parts[i + 1]
-      while (i + 1 < parts.size() and parts[i + 1] is nil) {
+      while (i + 1 < len(parts) and parts[i + 1] is nil) {
         i = i + 2
       }
-      if (i + 1 >= parts.size()) {
+      if (i + 1 >= len(parts)) {
         fail("Missing switch implementation")
       }
       return parts[i + 1]()
     }
     i = i + 2
   }
-  if (i < parts.size()) {
+  if (i < len(parts)) {
     return parts[i]()
   }
 }
