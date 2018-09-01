@@ -103,10 +103,10 @@ def main() {
   fill_color = [0.5, 0.5, 0]
   live_color = [0, 0.5, 0.5]
   gui = simple.Gui(g -> % {
-    g.fillRect(0, 0, g.width, g.height, background_color)
+    g.fill_rectangle(0, 0, g.width, g.height, background_color)
 
     def fill(row, col, color) {
-      g.fillRect(
+      g.fill_rectangle(
         col * cell_width,
         row * cell_height,
         cell_width,
@@ -124,8 +124,7 @@ def main() {
       }
     }
 
-    for point in live_piece[0].coordinates() {
-      [row, col] = point
+    for [row, col] in live_piece[0].coordinates() {
       fill(row, col, live_color)
     }
   })

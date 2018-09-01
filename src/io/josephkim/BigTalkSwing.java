@@ -44,7 +44,6 @@ public final class BigTalkSwing {
           Value keyTyped = listener.mustGetAttribute(Symbol.of("keyTyped"));
           self.mustGetNative(Component.class).addKeyListener(new KeyListener() {
             @Override public void keyPressed(KeyEvent e) {
-              System.out.println("Key pressed!");
               keyPressed.call(listener, asNative(e));
             }
             @Override public void keyReleased(KeyEvent e) {

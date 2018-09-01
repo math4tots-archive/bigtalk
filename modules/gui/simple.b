@@ -89,7 +89,7 @@ class Graphics {
     return this.gui._canvas.getSize()[1]
   }
 
-  def fillRect(x, y, width, height, rgb) {
+  def fill_rectangle(x, y, width, height, rgb) {
     [r, g, b] = rgb
     color_ = color.of(r, g, b, 1.0)
     this.graphics.setColor(color_)

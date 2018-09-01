@@ -782,10 +782,10 @@ public final class BigTalkCore {
     }
   }
   public static final class ForLoopNext extends Branch {
-    private final Symbol name;
-    ForLoopNext(Token token, Symbol name) {
+    private final Pattern pattern;
+    ForLoopNext(Token token, Pattern pattern) {
       super(token);
-      this.name = name;
+      this.pattern = pattern;
     }
     @Override public int step(Scope scope, ValueStack stack) {
       Value next = stack.peek().next();
@@ -793,7 +793,7 @@ public final class BigTalkCore {
         stack.pop();
         return loc;
       }
-      scope.put(name, next);
+      pattern.bind(scope, next);
       return NEXT;
     }
   }
@@ -888,12 +888,12 @@ public final class BigTalkCore {
     }
   }
   public static final class For extends Statement {
-    private final Symbol name;
+    private final Pattern pattern;
     private final Expression expression;
     private final Block body;
-    public For(Token token, String name, Expression expression, Block body) {
+    public For(Token token, Pattern pattern, Expression expression, Block body) {
       super(token);
-      this.name = Symbol.of(name);
+      this.pattern = pattern;
       this.expression = expression;
       this.body = body;
     }
@@ -901,7 +901,7 @@ public final class BigTalkCore {
       expression.compile(out);
       out.add(new ForLoopSetup(token));
       int step = out.size();
-      Branch forLoopNext = new ForLoopNext(token, name);
+      Branch forLoopNext = new ForLoopNext(token, pattern);
       out.add(forLoopNext);
       body.compile(out);
       out.add(new Jump(token).set(step));
@@ -2396,11 +2396,11 @@ public final class BigTalkCore {
         return new While(token, condition, block);
       }
       if (consume("for")) {
-        String name = (String) expect("ID").value;
+        Pattern pattern = parsePattern();
         expect("in");
         Expression container = parseExpression();
         Block body = parseBlock();
-        return new For(token, name, container, body);
+        return new For(token, pattern, container, body);
       }
       Expression expression = parseExpression();
       expectStatementDelimiter();
