@@ -61,6 +61,8 @@ public final class BigTalkCore {
   private static final Symbol __addSymbol = Symbol.of("__add");
   private static final Symbol __subSymbol = Symbol.of("__sub");
   private static final Symbol __ltSymbol = Symbol.of("__lt");
+  private static final Symbol __iterSymbol = Symbol.of("__iter");
+  private static final Symbol __nextSymbol = Symbol.of("__next");
   private static final Symbol lambdaName = Symbol.of("$lambda");
   private static final Map<Class<?>, Scope> nativeProtoTable = new HashMap<>();
   static final Nil nil = new Nil();
@@ -117,6 +119,8 @@ public final class BigTalkCore {
     new Builtin("_isNot", P("a", "b"), (self, args) -> {
       return args[0] != args[1] ? tru : fal;
     });
+  static final Builtin identityFn =
+    new Builtin("_identity", P("x"), (self, args) -> args[0]);
   static final Scope objectProto = new Scope(null);
   static final Scope objectClass = makeClass("Object", makeEmptyList(), objectProto);
   static final Scope classProto = new Scope(null)
@@ -202,22 +206,24 @@ public final class BigTalkCore {
     }));
   static final Scope stringClass = makeClass("String", stringProto);
   static final Scope iterableProto = new Scope(null)
-    .put(new Builtin("all", P("test"), (self, args) -> {
+    .put(new Builtin("all", P("/test"), (self, args) -> {
+      Value testfunc = args.length == 0 ? identityFn : args[0];
       Value iterator = self.iterator();
       Value next = iterator.next();
       while (next != null) {
-        if (!args[0].call(null, next).truthy()) {
+        if (!testfunc.call(null, next).truthy()) {
           return fal;
         }
         next = iterator.next();
       }
       return tru;
     }))
-    .put(new Builtin("any", P("test"), (self, args) -> {
+    .put(new Builtin("any", P("/test"), (self, args) -> {
+      Value testfunc = args.length == 0 ? identityFn : args[0];
       Value iterator = self.iterator();
       Value next = iterator.next();
       while (next != null) {
-        if (args[0].call(null, next).truthy()) {
+        if (testfunc.call(null, next).truthy()) {
           return tru;
         }
         next = iterator.next();
@@ -307,6 +313,34 @@ public final class BigTalkCore {
   static final Scope functionClass = makeClass("Function", functionProto);
   static final Scope generatorObjectProto = new Scope(null);
   static final Scope generatorObjectClass = makeClass("GeneratorObject", listOf(iterableClass), generatorObjectProto);
+  static final Scope randomClass =
+    makeNativeClass(
+      Random.class,
+      new Scope(null)
+        .put(new Builtin("int", P("a", "b"), (self, args) -> {
+          Random random = self.mustGetNative(Random.class);
+          int a = (int) args[0].mustCast(Number.class).get();
+          int b = (int) args[1].mustCast(Number.class).get();
+          return Number.of(a + random.nextInt(b - a));
+        }))
+        .put(new Builtin("pick", P("container"), (self, args) -> {
+          Random random = self.mustGetNative(Random.class);
+          Value iterator = args[0].iterator();
+          Value next = iterator.next();
+          ArrayList<Value> arr = new ArrayList<>();
+          while (next != null) {
+            arr.add(next);
+            next = iterator.next();
+          }
+          return arr.get(random.nextInt(arr.size()));
+        })))
+    .put(new Builtin("__call", P("/seed"), (self, args) -> {
+      Random random =
+        args.length == 0 ?
+        new Random() :
+        new Random((long) args[0].mustCast(Number.class).get());
+      return asNative(random);
+    }));
   static final Scope globals = new Scope(null)
     .put("Object", objectClass)
     .put("Class", classClass)
@@ -332,7 +366,7 @@ public final class BigTalkCore {
       return new Arr(values);
     }))
     .put(new Builtin("type", P("obj"), (self, args) -> {
-      Value klass = self.getAttribute(__classSymbol);
+      Value klass = args[0].getAttribute(__classSymbol);
       if (klass != null) {
         return klass;
       }
@@ -349,20 +383,8 @@ public final class BigTalkCore {
   private static final Importer importer = new Importer()
     .put("_globals", () -> BigTalkCore.importer.getGlobals());
   static {
-    addNativeModule("random", () -> {
-      Random random = new Random();
-      return new Scope(null)
-        .put("pick", new Builtin("random.pick", P("container"), (self, args) -> {
-          Value iterator = args[0].iterator();
-          Value next = iterator.next();
-          ArrayList<Value> arr = new ArrayList<>();
-          while (next != null) {
-            arr.add(next);
-            next = iterator.next();
-          }
-          return arr.get(random.nextInt(arr.size()));
-        }));
-    });
+    addNativeModule("random", () -> new Scope(null)
+      .put("Random", randomClass));
   }
   public static void addNativeModule(String name, NativeModule nm) {
     importer.put(name, nm);
@@ -1674,6 +1696,20 @@ public final class BigTalkCore {
     }
     public void updateIfMissing(Scope other) {
       updateIfMissing(other.table);
+    }
+    @Override public Value iterator() {
+      Value getIterator = getAttribute(__iterSymbol);
+      if (getIterator == null) {
+        return super.iterator();
+      }
+      return getIterator.call(this);
+    }
+    @Override public Value next() {
+      Value getNext = getAttribute(__nextSymbol);
+      if (getNext == null) {
+        return super.next();
+      }
+      return getNext.call(this);
     }
     @Override public Value getAttribute(Symbol key) {
       return get(key);

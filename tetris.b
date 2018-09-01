@@ -54,6 +54,25 @@ class Board {
       0 <= r and r < this.height and
       0 <= c and c < this.width)
   }
+
+  def _row_is_full(row) {
+    return this._rows[row].all()
+  }
+
+  def _clear_row(row) {
+    for r in reversed(range(row)) {
+      this._rows[r + 1] = this._rows[r]
+    }
+    this._rows[0] = [0] * this.width
+  }
+
+  def clear_completed_rows() {
+    for r in reversed(range(this.height)) {
+      while (this._row_is_full(r)) {
+        this._clear_row(r)
+      }
+    }
+  }
 }
 
 class Piece {
@@ -138,8 +157,10 @@ pieces = [
 
 
 def main() {
+  rand = random.Random()
+
   def spawn_piece() {
-    return random.pick(pieces).move_to(0, board.width // 2 - 2)
+    return rand.pick(pieces).move_to(0, board.width // 2 - 2)
   }
 
   board = Board(HEIGHT, WIDTH)
@@ -193,6 +214,12 @@ def main() {
       'Up', () -> {
         rotate_piece()
       },
+      'Space', () -> % {
+        for i in range(board.height) {
+          move_piece(1, 0)
+        }
+        move_piece_down()
+      },
       () -> {
         print('Unrecognized key ' + event.key)
       })
@@ -229,6 +256,7 @@ def main() {
     move_piece(1, 0)
     if (old_piece == live_piece[0]) {
       board.place(old_piece)
+      board.clear_completed_rows()
       live_piece[0] = spawn_piece()
     }
   }
