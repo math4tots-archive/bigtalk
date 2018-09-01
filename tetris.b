@@ -2,6 +2,7 @@
 """
 import _bt.basic_test
 import gui.simple
+import random
 
 HEIGHT = 24
 WIDTH = 10
@@ -138,7 +139,7 @@ pieces = [
 
 def main() {
   def spawn_piece() {
-    return pieces[0].move_to(0, board.width // 2 - 2)
+    return random.pick(pieces).move_to(0, board.width // 2 - 2)
   }
 
   board = Board(HEIGHT, WIDTH)

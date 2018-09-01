@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Random;
 import java.util.Set;
 import java.util.Stack;
 
@@ -347,6 +348,22 @@ public final class BigTalkCore {
   }
   private static final Importer importer = new Importer()
     .put("_globals", () -> BigTalkCore.importer.getGlobals());
+  static {
+    addNativeModule("random", () -> {
+      Random random = new Random();
+      return new Scope(null)
+        .put("pick", new Builtin("random.pick", P("container"), (self, args) -> {
+          Value iterator = args[0].iterator();
+          Value next = iterator.next();
+          ArrayList<Value> arr = new ArrayList<>();
+          while (next != null) {
+            arr.add(next);
+            next = iterator.next();
+          }
+          return arr.get(random.nextInt(arr.size()));
+        }));
+    });
+  }
   public static void addNativeModule(String name, NativeModule nm) {
     importer.put(name, nm);
   }
