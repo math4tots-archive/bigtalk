@@ -1,7 +1,7 @@
 """tetris game
 """
 import _bt.basic_test
-import gui.simple
+import gui.simple as sg
 import random
 
 HEIGHT = 24
@@ -191,14 +191,14 @@ def main() {
   }
 
   board = Board(HEIGHT, WIDTH)
-  background_color = [0.2, 0.1, 0.1]
-  board_color = [0, 0, 0]
-  fill_color = [0.5, 0.5, 0]
-  live_color = [0, 0.5, 0.5]
-  score_color = [1, 1, 1]
+  background_color = sg.Color(0.2, 0.1, 0.1)
+  board_color = sg.Color(0, 0, 0)
+  fill_color = sg.Color(0.5, 0.5, 0)
+  live_color = sg.Color(0, 0.5, 0.5)
+  score_color = sg.Color(1, 1, 1)
   live_piece = [spawn_piece()]
   score = [0]
-  gui = simple.Gui(g -> % {
+  gui = sg.Gui(g -> % {
     g.fill_rectangle(0, 0, g.width, g.height, background_color)
     g.fill_rectangle(0, 0, g.width / 2, g.height, board_color)
 
@@ -206,6 +206,7 @@ def main() {
       g.width * 2 / 3,
       g.height / 3,
       str(score),
+      sg.MONOSPACED,
       50,
       score_color)
 

@@ -9,7 +9,11 @@ and that's it.
 
 """
 import gui.swing
-import gui.swing.color
+
+"Font names"
+MONOSPACED = swing.MONOSPACED
+SANS_SERIF = swing.SANS_SERIF
+SERIF = swing.SERIF
 
 
 class Gui {
@@ -56,7 +60,7 @@ class Gui {
       })
     } else {
       "TODO: throw value error"
-      assert(false)
+      fail('Unrecognized event type ' + str(event_type))
     }
   }
 }
@@ -89,18 +93,33 @@ class Graphics {
     return this.gui._canvas.getSize()[1]
   }
 
-  def fill_rectangle(x, y, width, height, rgb) {
-    [r, g, b] = rgb
-    color_ = color.of(r, g, b, 1.0)
-    this.graphics.setColor(color_)
+  def fill_rectangle(x, y, width, height, color) {
+    this.graphics.setColor(color._as_swing_color())
     this.graphics.fillRect(x, y, width, height)
   }
 
-  def draw_string(x, y, s, font_size, rgb) {
-    [r, g, b] = rgb
-    color_ = color.of(r, g, b, 1.0)
-    this.graphics.setColor(color_)
-    this.graphics.setFontSize(font_size)
+  def draw_string(x, y, s, font_name, font_size, color) {
+    this.graphics.setColor(color._as_swing_color())
+    this.graphics.setFont(font_name, 0, font_size)
     this.graphics.drawString(s, x, y)
+  }
+}
+
+class Color {
+  def __init(r, g, b, a = 1.0) {
+    this._r = r
+    this._g = g
+    this._b = b
+    this._a = a
+  }
+
+  def _as_swing_color() {
+    return swing.Color(this._r, this._g, this._b, this._a)
+  }
+
+  def __repr() {
+    return 'Color(' + ' ,'.join([
+      this._r, this._g, this._b, this._a,
+    ].map(repr)) + ')'
   }
 }

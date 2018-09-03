@@ -384,6 +384,9 @@ public final class BigTalkCore {
       ArrayList<Value> values = map(sorted(names), Str::of);
       return new Arr(values);
     }))
+    .put(new Builtin("fail", P("message"), (self, args) -> {
+      throw new AssertError(args[0].str());
+    }))
     .put(new Builtin("iter", P("obj"), (self, args) -> args[0].iterator()))
     .put(new Builtin("type", P("obj"), (self, args) -> {
       Value klass = args[0].getAttribute(__classSymbol);

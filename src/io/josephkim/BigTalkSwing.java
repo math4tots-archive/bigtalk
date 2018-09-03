@@ -16,6 +16,7 @@ import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseWheelEvent;
+import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Point;
@@ -265,10 +266,12 @@ public final class BigTalkSwing {
             (int) args[3].mustCast(Number.class).get());
           return nil;
         }))
-        .put(new Builtin("setFontSize", P("size"), (self, args) -> {
+        .put(new Builtin("setFont", P("name", "style", "size"), (self, args) -> {
           Graphics g = self.mustGetNative(Graphics.class);
-          g.setFont(g.getFont().deriveFont(
-            (float) args[0].mustCast(Number.class).get()));
+          g.setFont(new Font(
+            args[0].mustCast(Str.class).get(),
+            (int) args[1].mustCast(Number.class).get(),
+            (int) args[2].mustCast(Number.class).get()));
           return nil;
         }))
         .put(new Builtin("drawString", P("str", "x", "y"), (self, args) -> {
@@ -286,9 +289,11 @@ public final class BigTalkSwing {
       .put("Frame", frameClass)
       .put("Panel", panelClass)
       .put("Button", buttonClass)
-      .put("Canvas", canvasClass));
-    addNativeModule("gui.swing.color", () -> new Scope(null)
-      .put(new Builtin("of", P("r", "g", "b", "/a"), (self, args) -> {
+      .put("Canvas", canvasClass)
+      .put("MONOSPACED", Str.of(Font.MONOSPACED))
+      .put("SERIF", Str.of(Font.SERIF))
+      .put("SANS_SERIF", Str.of(Font.SANS_SERIF))
+      .put(new Builtin("Color", P("r", "g", "b", "/a"), (self, args) -> {
         double r, g, b, alpha = 1.0;
         r = args[0].mustCast(Number.class).get();
         g = args[1].mustCast(Number.class).get();
