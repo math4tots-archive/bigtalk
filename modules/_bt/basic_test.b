@@ -257,8 +257,6 @@
     while (i.has_more()) {
       ys.push(i.next())
     }
-    print(i)
     assert.equal(xs, ys)
-    print('ys = ' + str(ys))
   }
 }
