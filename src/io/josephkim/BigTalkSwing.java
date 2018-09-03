@@ -265,6 +265,12 @@ public final class BigTalkSwing {
             (int) args[3].mustCast(Number.class).get());
           return nil;
         }))
+        .put(new Builtin("setFontSize", P("size"), (self, args) -> {
+          Graphics g = self.mustGetNative(Graphics.class);
+          g.setFont(g.getFont().deriveFont(
+            (float) args[0].mustCast(Number.class).get()));
+          return nil;
+        }))
         .put(new Builtin("drawString", P("str", "x", "y"), (self, args) -> {
           self.mustGetNative(Graphics.class).drawString(
             args[0].mustCast(Str.class).get(),

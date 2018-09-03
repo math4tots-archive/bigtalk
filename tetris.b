@@ -67,11 +67,14 @@ class Board {
   }
 
   def clear_completed_rows() {
+    number_of_completed_rows = 0
     for r in reversed(range(this.height)) {
       while (this._row_is_full(r)) {
+        number_of_completed_rows = number_of_completed_rows + 1
         this._clear_row(r)
       }
     }
+    return number_of_completed_rows
   }
 }
 
@@ -149,8 +152,32 @@ pieces = [
   ]),
   Piece([
     [0, 0, 1, 0],
+    [0, 0, 1, 0],
+    [0, 1, 1, 0],
+    [0, 0, 0, 0],
+  ]),
+  Piece([
+    [0, 0, 1, 0],
     [0, 1, 1, 0],
     [0, 0, 1, 0],
+    [0, 0, 0, 0],
+  ]),
+  Piece([
+    [0, 0, 0, 0],
+    [0, 1, 1, 0],
+    [0, 1, 1, 0],
+    [0, 0, 0, 0],
+  ]),
+  Piece([
+    [0, 0, 0, 0],
+    [0, 1, 1, 0],
+    [0, 0, 1, 1],
+    [0, 0, 0, 0],
+  ]),
+  Piece([
+    [0, 0, 0, 0],
+    [0, 1, 1, 0],
+    [1, 1, 0, 0],
     [0, 0, 0, 0],
   ]),
 ]
@@ -164,12 +191,23 @@ def main() {
   }
 
   board = Board(HEIGHT, WIDTH)
-  background_color = [0, 0, 0]
+  background_color = [0.2, 0.1, 0.1]
+  board_color = [0, 0, 0]
   fill_color = [0.5, 0.5, 0]
   live_color = [0, 0.5, 0.5]
+  score_color = [1, 1, 1]
   live_piece = [spawn_piece()]
+  score = [0]
   gui = simple.Gui(g -> % {
     g.fill_rectangle(0, 0, g.width, g.height, background_color)
+    g.fill_rectangle(0, 0, g.width / 2, g.height, board_color)
+
+    g.draw_string(
+      g.width * 2 / 3,
+      g.height / 3,
+      str(score),
+      50,
+      score_color)
 
     def fill(row, col, color) {
       g.fill_rectangle(
@@ -181,7 +219,7 @@ def main() {
     }
 
     cell_height = g.height / board.height
-    cell_width = g.width / board.width
+    cell_width = g.width / board.width / 2
     for row in range(board.height) {
       for col in range(board.width) {
         if (board[row, col]) {
@@ -195,7 +233,7 @@ def main() {
     }
   })
   gui.title = 'Tetris'
-  gui.size = [600, 1200]
+  gui.size = [1000, 1200]
   gui.on('key', event -> % {
     switch(event.key,
       'A', nil,
@@ -256,13 +294,12 @@ def main() {
     move_piece(1, 0)
     if (old_piece == live_piece[0]) {
       board.place(old_piece)
-      board.clear_completed_rows()
+      score[0] = score[0] + board.clear_completed_rows() ** 2
       live_piece[0] = spawn_piece()
     }
   }
 
   def tick() {
-    print('tick called!')
     move_piece_down()
     gui.repaint()
     wait_for(2, tick)

@@ -95,4 +95,12 @@ class Graphics {
     this.graphics.setColor(color_)
     this.graphics.fillRect(x, y, width, height)
   }
+
+  def draw_string(x, y, s, font_size, rgb) {
+    [r, g, b] = rgb
+    color_ = color.of(r, g, b, 1.0)
+    this.graphics.setColor(color_)
+    this.graphics.setFontSize(font_size)
+    this.graphics.drawString(s, x, y)
+  }
 }

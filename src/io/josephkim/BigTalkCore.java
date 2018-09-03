@@ -54,6 +54,7 @@ public final class BigTalkCore {
   private static final Symbol __setitemSymbol = Symbol.of("__setitem");
   private static final Symbol __reprSymbol = Symbol.of("__repr");
   private static final Symbol __strSymbol = Symbol.of("__str");
+  private static final Symbol __powSymbol = Symbol.of("__pow");
   private static final Symbol __mulSymbol = Symbol.of("__mul");
   private static final Symbol __divSymbol = Symbol.of("__div");
   private static final Symbol __floordivSymbol = Symbol.of("__floordiv");
@@ -176,6 +177,11 @@ public final class BigTalkCore {
       return Number.of(
         self.mustCast(Number.class).value /
         args[0].mustCast(Number.class).value);
+    }))
+    .put(new Builtin("__pow", P("n"), (self, args) -> {
+      return Number.of(Math.pow(
+        self.mustCast(Number.class).value,
+        args[0].mustCast(Number.class).value));
     }))
     .put(new Builtin("__floordiv", P("x"), (self, args) -> {
       return Number.of(Math.floor(
@@ -2055,7 +2061,7 @@ public final class BigTalkCore {
     "await"));
   public static final List<String> symbols = reversed(sorted(Arrays.asList(
     "\n",
-    "=>", "->", "/", "//", "%%",
+    "=>", "->", "/", "//", "%%", "**",
 
     // ECMA 5 punctuators
     "{", "}", "(", ")", "[", "]",
@@ -2763,7 +2769,13 @@ public final class BigTalkCore {
       return parsePostfix();
     }
     Expression parseExponentiation() {
-      return parsePrefix();
+      Expression e = parsePrefix();
+      Token token = peek();
+      if (consume("**")) {
+        Expression arg = parseExponentiation();
+        return methodCall(token, e, __powSymbol, arg);
+      }
+      return e;
     }
     static Expression methodCall(Token token, Expression owner, Symbol name, Expression... args) {
       return methodCall(token, owner, name, listOf(args));
