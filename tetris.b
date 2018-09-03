@@ -188,6 +188,7 @@ def main() {
   fill_color = sg.Color(0.5, 0.5, 0)
   live_color = sg.Color(0, 0.5, 0.5)
   score_color = sg.Color(1, 1, 1)
+  next_piece = [spawn_piece()]
   live_piece = [spawn_piece()]
   score = [0]
   gui = sg.Gui(g -> % {
@@ -196,32 +197,44 @@ def main() {
 
     g.draw_string(
       g.width * 2 / 3,
-      g.height / 3,
+      g.height / 2,
       str(score),
       sg.MONOSPACED,
       50,
       score_color)
 
-    def fill(row, col, color) {
-      g.fill_rectangle(
-        col * cell_width,
-        row * cell_height,
-        cell_width,
-        cell_height,
-        color)
-    }
-
-    def outline(row, col, color) {
-      g.draw_rectangle(
-        col * cell_width,
-        row * cell_height,
-        cell_width,
-        cell_height,
-        color)
-    }
-
     cell_height = g.height / board.nrows
     cell_width = g.width / board.ncols / 2
+
+    def fill(row, col, color, relative_pos = nil) {
+      [x, y] = relative_pos or [0, 0]
+      g.fill_rectangle(
+        x + col * cell_width,
+        y + row * cell_height,
+        cell_width,
+        cell_height,
+        color)
+    }
+
+    def outline(row, col, color, relative_pos = nil) {
+      [x, y] = relative_pos or [0, 0]
+      g.draw_rectangle(
+        x + col * cell_width,
+        y + row * cell_height,
+        cell_width,
+        cell_height,
+        color)
+    }
+
+    def draw_piece(piece, relative_pos = nil) {
+      for [row, col] in piece.coordinates() {
+        fill(row, col, live_color, relative_pos)
+      }
+      for [row, col] in piece.coordinates() {
+        outline(row, col, background_color, relative_pos)
+      }
+    }
+
     for row in range(board.nrows) {
       for col in range(board.ncols) {
         if (board[row, col]) {
@@ -237,12 +250,10 @@ def main() {
       }
     }
 
-    for [row, col] in live_piece[0].coordinates() {
-      fill(row, col, live_color)
-    }
-    for [row, col] in live_piece[0].coordinates() {
-      outline(row, col, background_color)
-    }
+    draw_piece(live_piece[0])
+
+    "Draw the preview piece"
+    draw_piece(next_piece[0], [g.width / 2, g.height / 4])
   })
   gui.title = 'Tetris'
   gui.size = [1000, 1200]
@@ -308,7 +319,8 @@ def main() {
     if (old_piece == live_piece[0]) {
       board.place(old_piece)
       score[0] = score[0] + board.clear_completed_rows() ** 2
-      live_piece[0] = spawn_piece()
+      live_piece[0] = next_piece[0]
+      next_piece[0] = spawn_piece()
     }
   }
 
