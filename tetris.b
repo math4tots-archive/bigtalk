@@ -4,25 +4,17 @@ import _bt.basic_test
 import gui.simple as sg
 import random
 
-HEIGHT = 24
-WIDTH = 10
+NUMBER_OF_ROWS = 24
+NUMBER_OF_COLUMNS = 10
 
 """Board with coordinates where (0, 0) is the upper left corner.
 Coordinates are (row, column)
 """
 class Board {
-  def __init(height, width) {
-    this._height = height
-    this._width = width
-    this._rows = ([0] * height).map(x -> [0] * width)
-  }
-
-  def __get_height() {
-    return this._height
-  }
-
-  def __get_width() {
-    return this._width
+  def __init(nrows, ncols) {
+    this.nrows = nrows
+    this.ncols = ncols
+    this._rows = ([0] * nrows).map(x -> [0] * ncols)
   }
 
   def __setitem(row, col, value) {
@@ -38,7 +30,7 @@ class Board {
   }
 
   def __repr() {
-    return 'Board(' + str(this._height) + ', ' + str(this._width) + ')'
+    return 'Board(' + str(this.nrows) + ', ' + str(this.ncols) + ')'
   }
 
   def place(piece) {
@@ -51,8 +43,8 @@ class Board {
   def contains_point(point) {
     [r, c] = point
     return (
-      0 <= r and r < this.height and
-      0 <= c and c < this.width)
+      0 <= r and r < this.nrows and
+      0 <= c and c < this.ncols)
   }
 
   def _row_is_full(row) {
@@ -63,12 +55,12 @@ class Board {
     for r in reversed(range(row)) {
       this._rows[r + 1] = this._rows[r]
     }
-    this._rows[0] = [0] * this.width
+    this._rows[0] = [0] * this.ncols
   }
 
   def clear_completed_rows() {
     number_of_completed_rows = 0
-    for r in reversed(range(this.height)) {
+    for r in reversed(range(this.nrows)) {
       while (this._row_is_full(r)) {
         number_of_completed_rows = number_of_completed_rows + 1
         this._clear_row(r)
@@ -187,10 +179,10 @@ def main() {
   rand = random.Random()
 
   def spawn_piece() {
-    return rand.pick(pieces).move_to(0, board.width // 2 - 2)
+    return rand.pick(pieces).move_to(0, board.ncols // 2 - 2)
   }
 
-  board = Board(HEIGHT, WIDTH)
+  board = Board(NUMBER_OF_ROWS, NUMBER_OF_COLUMNS)
   background_color = sg.Color(0.2, 0.1, 0.1)
   board_color = sg.Color(0, 0, 0)
   fill_color = sg.Color(0.5, 0.5, 0)
@@ -219,10 +211,10 @@ def main() {
         color)
     }
 
-    cell_height = g.height / board.height
-    cell_width = g.width / board.width / 2
-    for row in range(board.height) {
-      for col in range(board.width) {
+    cell_height = g.height / board.nrows
+    cell_width = g.width / board.ncols / 2
+    for row in range(board.nrows) {
+      for col in range(board.ncols) {
         if (board[row, col]) {
           fill(row, col, fill_color)
         }
@@ -254,7 +246,7 @@ def main() {
         rotate_piece()
       },
       'Space', () -> % {
-        for i in range(board.height) {
+        for i in range(board.nrows) {
           move_piece(1, 0)
         }
         move_piece_down()
