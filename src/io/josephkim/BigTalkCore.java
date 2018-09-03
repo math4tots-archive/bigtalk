@@ -366,6 +366,10 @@ public final class BigTalkCore {
     .put("List", listClass)
     .put("RandomAccessContainer", randomAccessContainerClass)
     .put("assert", makeSingleton("assert")
+      .put(new Builtin("type", P("obj", "type"), (self, args) -> {
+        expectType(args[0], args[1].mustCast(Scope.class));
+        return nil;
+      }))
       .put(new Builtin("__call", P("x"), (self, args) -> {
         if (!args[0].truthy()) {
           throw new AssertError("Assertion failed");

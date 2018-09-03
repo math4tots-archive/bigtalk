@@ -211,6 +211,15 @@ def main() {
         color)
     }
 
+    def outline(row, col, color) {
+      g.draw_rectangle(
+        col * cell_width,
+        row * cell_height,
+        cell_width,
+        cell_height,
+        color)
+    }
+
     cell_height = g.height / board.nrows
     cell_width = g.width / board.ncols / 2
     for row in range(board.nrows) {
@@ -220,13 +229,24 @@ def main() {
         }
       }
     }
+    for row in range(board.nrows) {
+      for col in range(board.ncols) {
+        if (board[row, col]) {
+          outline(row, col, background_color)
+        }
+      }
+    }
 
     for [row, col] in live_piece[0].coordinates() {
       fill(row, col, live_color)
     }
+    for [row, col] in live_piece[0].coordinates() {
+      outline(row, col, background_color)
+    }
   })
   gui.title = 'Tetris'
   gui.size = [1000, 1200]
+  gui.resizable = false
   gui.on('key', event -> % {
     switch(event.key,
       'A', nil,

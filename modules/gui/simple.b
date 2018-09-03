@@ -37,6 +37,14 @@ class Gui {
     this._frame.pack()
   }
 
+  def __get_resizable() {
+    return this._frame.isResizable()
+  }
+
+  def __set_resizable(resizable) {
+    this._frame.setResizable(resizable)
+  }
+
   def start() {
     this._frame.setVisible(true)
   }
@@ -96,6 +104,11 @@ class Graphics {
   def fill_rectangle(x, y, width, height, color) {
     this.graphics.setColor(color._as_swing_color())
     this.graphics.fillRect(x, y, width, height)
+  }
+
+  def draw_rectangle(x, y, width, height, color) {
+    this.graphics.setColor(color._as_swing_color())
+    this.graphics.drawRect(x, y, width, height)
   }
 
   def draw_string(x, y, s, font_name, font_size, color) {

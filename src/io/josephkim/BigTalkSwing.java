@@ -145,6 +145,13 @@ public final class BigTalkSwing {
           self.mustGetNative(JFrame.class).pack();
           return nil;
         }))
+        .put(new Builtin("isResizable", P(), (self, args) -> {
+          return self.mustGetNative(JFrame.class).isResizable() ? tru : fal;
+        }))
+        .put(new Builtin("setResizable", P("resizable"), (self, args) -> {
+          self.mustGetNative(JFrame.class).setResizable(args[0].truthy());
+          return nil;
+        }))
         .put(new Builtin("setVisible", P("visible"), (self, args) -> {
           self.mustGetNative(JFrame.class).setVisible(args[0].truthy());
           return nil;
@@ -260,6 +267,14 @@ public final class BigTalkSwing {
         }))
         .put(new Builtin("fillRect", P("x", "y", "width", "height"), (self, args) -> {
           self.mustGetNative(Graphics.class).fillRect(
+            (int) args[0].mustCast(Number.class).get(),
+            (int) args[1].mustCast(Number.class).get(),
+            (int) args[2].mustCast(Number.class).get(),
+            (int) args[3].mustCast(Number.class).get());
+          return nil;
+        }))
+        .put(new Builtin("drawRect", P("x", "y", "width", "height"), (self, args) -> {
+          self.mustGetNative(Graphics.class).drawRect(
             (int) args[0].mustCast(Number.class).get(),
             (int) args[1].mustCast(Number.class).get(),
             (int) args[2].mustCast(Number.class).get(),
