@@ -96,7 +96,7 @@ public final class BigTalkDesktop {
             .map(Str::of)
             .collect(Collectors.toList())));
         } catch (IOException ex) {
-          throw new UserError(ex.toString());
+          throw new MiscError(ex.toString());
         }
       })));
     BigTalkSwing.init();

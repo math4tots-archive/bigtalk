@@ -359,9 +359,21 @@ public final class BigTalkCore {
         new Random((long) args[0].mustCast(Number.class).get());
       return asNative(random);
     }));
+  static final Scope bufferedIteratorClass =
+    makeNativeClass(
+      BufferedIterator.class,
+      new Scope(null)
+        .put(new Builtin("has_more", P(), (self, args) ->
+          self.mustGetNative(BufferedIterator.class).hasNext() ? tru : fal))
+        .put(new Builtin("next", P(), (self, args) ->
+          self.mustGetNative(BufferedIterator.class).next())));
   static final Scope globals = new Scope(null)
     .put("Object", objectClass)
     .put("Class", classClass)
+    .put("Nil", nilClass)
+    .put("Bool", boolClass)
+    .put("Number", numberClass)
+    .put("String", stringClass)
     .put("Function", functionClass)
     .put("List", listClass)
     .put("RandomAccessContainer", randomAccessContainerClass)
@@ -391,7 +403,8 @@ public final class BigTalkCore {
     .put(new Builtin("fail", P("message"), (self, args) -> {
       throw new AssertError(args[0].str());
     }))
-    .put(new Builtin("iter", P("obj"), (self, args) -> args[0].iterator()))
+    .put(new Builtin("iter", P("obj"), (self, args) ->
+      asNative(new BufferedIterator(args[0].iterator()))))
     .put(new Builtin("type", P("obj"), (self, args) -> {
       Value klass = args[0].getAttribute(__classSymbol);
       if (klass != null) {
@@ -545,7 +558,7 @@ public final class BigTalkCore {
       super(message);
     }
   }
-  public static class UserError extends Error {
+  public static abstract class UserError extends Error {
     public UserError(Throwable throwable) {
       super("", throwable);
     }
@@ -565,6 +578,11 @@ public final class BigTalkCore {
     }
     public SyntaxError(Token token, String message) {
       super(toList(tokenStack.get(), Arrays.asList(token)), message, null);
+    }
+  }
+  public static final class MiscError extends UserError {
+    public MiscError(String message) {
+      super(message);
     }
   }
   public static final class KeyError extends UserError {
@@ -2046,6 +2064,33 @@ public final class BigTalkCore {
     HashSet<Value> ancestors =
       derived.mustGetAttribute(__ancestorsSymbol).mustCast(XSet.class).value;
     return ancestors.contains(base);
+  }
+
+  public static final class BufferedIterator {
+    private final Value iterator;
+    private Value next;
+
+    public BufferedIterator(Value iterator) {
+      this.iterator = iterator;
+      this.next = iterator.next();
+    }
+
+    public boolean hasNext() {
+      return next != null;
+    }
+
+    public Value next() {
+      if (next == null) {
+        throw new MiscError("next called on finished iterator");
+      }
+      Value ret = next;
+      next = iterator.next();
+      return ret;
+    }
+
+    @Override public String toString() {
+      return "<BufferedIterator>";
+    }
   }
 
   //// Lexer
