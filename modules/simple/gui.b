@@ -109,6 +109,7 @@ class Font {
     """
     this.name = name
     this.size = size
+    this._cached_swing_font = nil
   }
 
   def __getitem(new_size) {
@@ -125,6 +126,13 @@ class Font {
 
   def __get__swing_font_name() {
     return _swing_font_name_table[this.name]
+  }
+
+  def __get__swing_font() {
+    if (this._cached_swing_font is nil) {
+      this._cached_swing_font = swing.Font(this._swing_font_name, 0, this.size)
+    }
+    return this._cached_swing_font
   }
 }
 
@@ -186,7 +194,7 @@ class DrawingContext {
 
   def draw_string(x, y, s, font, color) {
     this._g.setColor(color._to_swing_color())
-    this._g.setFont(font._swing_font_name, 0, font.size)
+    this._g.setFont(font._swing_font)
     this._g.drawString(s, x, y)
   }
 }

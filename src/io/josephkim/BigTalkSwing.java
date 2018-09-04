@@ -281,12 +281,9 @@ public final class BigTalkSwing {
             (int) args[3].mustCast(Number.class).get());
           return nil;
         }))
-        .put(new Builtin("setFont", P("name", "style", "size"), (self, args) -> {
+        .put(new Builtin("setFont", P("font"), (self, args) -> {
           Graphics g = self.mustGetNative(Graphics.class);
-          g.setFont(new Font(
-            args[0].mustCast(Str.class).get(),
-            (int) args[1].mustCast(Number.class).get(),
-            (int) args[2].mustCast(Number.class).get()));
+          g.setFont(args[0].mustGetNative(Font.class));
           return nil;
         }))
         .put(new Builtin("drawString", P("str", "x", "y"), (self, args) -> {
@@ -298,6 +295,13 @@ public final class BigTalkSwing {
         })));
   static final Scope graphics2DClass =
     makeNativeClass(Graphics2D.class, listOf(graphicsClass));
+  static final Scope fontClass =
+    makeNativeClass(Font.class)
+    .put(new Builtin("__call", P("name", "style", "size"), (self, args) ->
+      asNative(new Font(
+        args[0].mustCast(Str.class).get(),
+        (int) args[1].mustCast(Number.class).get(),
+        (int) args[2].mustCast(Number.class).get()))));
 
   public static void init() {
     addNativeModule("gui.swing", () -> new Scope(null)
@@ -305,6 +309,7 @@ public final class BigTalkSwing {
       .put("Panel", panelClass)
       .put("Button", buttonClass)
       .put("Canvas", canvasClass)
+      .put("Font", fontClass)
       .put("MONOSPACED", Str.of(Font.MONOSPACED))
       .put("SERIF", Str.of(Font.SERIF))
       .put("SANS_SERIF", Str.of(Font.SANS_SERIF))
