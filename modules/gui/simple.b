@@ -56,7 +56,6 @@ class Gui {
 
   def on(event_type, callback) {
     if (event_type == 'key') {
-      print('adding key listener')
       this._frame.addKeyListener(new KeyListener {
         def keyPressed(event) {
           callback(KeyEvent(event))
@@ -67,7 +66,6 @@ class Gui {
         }
       })
     } else {
-      "TODO: throw value error"
       fail('Unrecognized event type ' + str(event_type))
     }
   }

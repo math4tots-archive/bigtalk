@@ -259,4 +259,27 @@
     }
     assert.equal(xs, ys)
   }
+
+  """unicode"""
+  %% {
+    """Chinese characters
+    Checks that it counts the number of characters here,
+    and not the number of bytes or utf-16 bytes.
+    """
+    assert.equal(len('世界'), 2)
+    assert.equal('世界'[0], '世')
+    assert.equal('世界'[1], '界')
+    assert.equal(len('😎🍆🐄'), 3)
+    assert.equal('😎🍆🐄'[0], '😎')
+    assert.equal('😎🍆🐄'[1], '🍆')
+    assert.equal('😎🍆🐄'[2], '🐄')
+    assert('😎🍆🐄'[2] != '🍆')
+
+    """Thai characters
+    It might look like there should only be 6 characters
+    below, there's a modifier character that doesn't take any space
+    by itself, and modifies the previous character.
+    """
+    assert.equal(len('พยัญชนะ'), 7)
+  }
 }

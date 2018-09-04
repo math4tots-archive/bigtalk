@@ -334,6 +334,8 @@ public final class BigTalkSwing {
   }
 
   public static final class Canvas extends JPanel {
+    private static final long serialVersionUID = 0L;
+
     private final Value callback;
     public Canvas(Value callback) {
       this.callback = callback;

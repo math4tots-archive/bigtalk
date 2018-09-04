@@ -195,6 +195,11 @@ public final class BigTalkCore {
     }));
   static final Scope numberClass = makeClass("Number", numberProto);
   static final Scope stringProto = new Scope(null)
+    .put(new Builtin("__len", P(), (self, args) ->
+      Number.of(self.mustCast(Str.class).size())))
+    .put(new Builtin("__getitem", P("index"), (self, args) ->
+      self.mustCast(Str.class).getItem(
+        (int) args[0].mustCast(Number.class).get())))
     .put(new Builtin("__add", P("x"), (self, args) -> {
       return Str.of(
         self.mustCast(Str.class).value +
@@ -413,8 +418,7 @@ public final class BigTalkCore {
       return objectClass;
     }))
     .put(new Builtin("len", P("obj"), (self, args) -> {
-      Value method = args[0].getAttribute(__lenSymbol);
-      return method.call(args[0], new Value[0]);
+      return args[0].callMethod(__lenSymbol, new Value[0]);
     }))
     .put(new Builtin("str", P("x"), (self, args) ->
       Str.of(args[0].str())))
@@ -1560,9 +1564,30 @@ public final class BigTalkCore {
     public static Str of(String value) {
       return new Str(value);
     }
+    public static Str fromCodePoint(int codePoint) {
+      int[] codePoints = new int[]{codePoint};
+      return new Str(new String(codePoints, 0, 1), codePoints);
+    }
     private final String value;
+    private int[] codePoints;
     private Str(String value) {
+      this(value, null);
+    }
+    private Str(String value, int[] codePoints) {
       this.value = value;
+      this.codePoints = codePoints;
+    }
+    private int[] getCodePoints() {
+      if (codePoints == null) {
+        codePoints = value.codePoints().toArray();
+      }
+      return codePoints;
+    }
+    public int size() {
+      return getCodePoints().length;
+    }
+    public Str getItem(int i) {
+      return fromCodePoint(getCodePoints()[i]);
     }
     @Override public boolean equals(Object other) {
       return other instanceof Str && value.equals(((Str) other).value);
