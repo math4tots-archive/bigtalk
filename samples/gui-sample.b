@@ -1,6 +1,5 @@
 import _bt.basic_test
 import gui.swing
-import gui.swing.color
 
 
 def main() {
@@ -11,7 +10,7 @@ def main() {
     print('graphics.getClipBounds() = ' + str(graphics.getClipBounds()))
     graphics.drawString("Hello world!", 50, 50)
   })
-  canvas.setBackground(color.green)
+  canvas.setBackground(swing.green)
   canvas.addMouseListener(new MouseListener {
     def mouseClicked(event) {
       print('mouseClicked: ' + repr(event))
