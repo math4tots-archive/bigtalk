@@ -122,6 +122,10 @@ class Font {
   def __repr() {
     return 'Font(' + this.name + ', ' + str(this.size) + ')'
   }
+
+  def __get__swing_font_name() {
+    return _swing_font_name_table[this.name]
+  }
 }
 
 Monospace = Font('monospace')
@@ -182,7 +186,7 @@ class DrawingContext {
 
   def draw_string(x, y, s, font, color) {
     this._g.setColor(color._to_swing_color())
-    this._g.setFont(font.name, 0, font.size)
+    this._g.setFont(font._swing_font_name, 0, font.size)
     this._g.drawString(s, x, y)
   }
 }

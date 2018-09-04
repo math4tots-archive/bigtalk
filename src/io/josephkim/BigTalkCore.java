@@ -315,8 +315,15 @@ public final class BigTalkCore {
       Number.of(self.mustCast(XSet.class).value.size())));
   static final Scope setClass = makeClass("Set", setProto);
   static final Scope mapProto = new Scope(null)
+    .put(new Builtin("__getitem", P("key"), (self, args) -> {
+      Value value = self.mustCast(XMap.class).get().get(args[0]);
+      if (value == null) {
+        throw new KeyError(args[0].toString());
+      }
+      return value;
+    }))
     .put(new Builtin("__len", P(), (self, args) ->
-      Number.of(self.mustCast(XSet.class).value.size())));
+      Number.of(self.mustCast(XMap.class).get().size())));
   static final Scope mapClass = makeClass("Map", mapProto);
   static final Scope singletonProto = new Scope(null)
     .put(new Builtin("__repr", P(), (self, args) -> {
@@ -1701,6 +1708,9 @@ public final class BigTalkCore {
     private final HashMap<Value, Value> value;
     public XMap(HashMap<Value, Value> value) {
       this.value = value;
+    }
+    public HashMap<Value, Value> get() {
+      return value;
     }
     @Override public boolean equals(Object other) {
       return other instanceof XMap && value.equals(((XMap) other).value);
