@@ -1,7 +1,7 @@
 """tetris game
 """
 import _bt.basic_test
-import gui.simple as sg
+import simple.gui as sg
 import random
 
 NUMBER_OF_ROWS = 24
@@ -191,7 +191,40 @@ def main() {
   next_piece = [spawn_piece()]
   live_piece = [spawn_piece()]
   score = [0]
-  gui = sg.Gui(g -> % {
+  gui = sg.Window()
+  gui.title = 'Tetris'
+  gui.size = [1000, 1200]
+  gui.resizable = false
+  gui.on('key', event -> % {
+    switch(event.key,
+      'A', nil,
+      'Left', () -> {
+        move_piece(0, -1)
+      },
+      'D', nil,
+      'Right', () -> {
+        move_piece(0, 1)
+      },
+      'S', nil,
+      'Down', () -> {
+        move_piece_down()
+      },
+      'W', nil,
+      'Up', () -> {
+        rotate_piece()
+      },
+      'Space', () -> % {
+        for i in range(board.nrows) {
+          move_piece(1, 0)
+        }
+        move_piece_down()
+      },
+      () -> {
+        print('Unrecognized key ' + event.key)
+      })
+    gui.repaint()
+  })
+  gui.on('draw', g -> % {
     g.fill_rectangle(0, 0, g.width, g.height, background_color)
     g.fill_rectangle(0, 0, g.width / 2, g.height, board_color)
 
@@ -199,8 +232,7 @@ def main() {
       g.width * 2 / 3,
       g.height / 2,
       str(score),
-      sg.MONOSPACED,
-      50,
+      sg.Monospace[50],
       score_color)
 
     cell_height = g.height / board.nrows
@@ -255,38 +287,6 @@ def main() {
     "Draw the preview piece"
     draw_piece(next_piece[0], [g.width / 2, g.height / 4])
   })
-  gui.title = 'Tetris'
-  gui.size = [1000, 1200]
-  gui.resizable = false
-  gui.on('key', event -> % {
-    switch(event.key,
-      'A', nil,
-      'Left', () -> {
-        move_piece(0, -1)
-      },
-      'D', nil,
-      'Right', () -> {
-        move_piece(0, 1)
-      },
-      'S', nil,
-      'Down', () -> {
-        move_piece_down()
-      },
-      'W', nil,
-      'Up', () -> {
-        rotate_piece()
-      },
-      'Space', () -> % {
-        for i in range(board.nrows) {
-          move_piece(1, 0)
-        }
-        move_piece_down()
-      },
-      () -> {
-        print('Unrecognized key ' + event.key)
-      })
-    gui.repaint()
-  })
 
   def rotate_piece() {
     new_piece = live_piece[0].rotate()
@@ -331,7 +331,7 @@ def main() {
   }
 
   wait_for(2, tick)
-  gui.start()
+  gui.show()
 }
 
 main()
