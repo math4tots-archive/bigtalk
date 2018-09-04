@@ -158,6 +158,16 @@ class Font {
   }
 }
 
+class FontMetrics {
+  def __init(metrics) {
+    this._metrics = metrics
+  }
+
+  def __get_height() {
+    return this._metrics.getHeight()
+  }
+}
+
 Monospace = Font('monospace')
 SansSerif = Font('sans serif')
 Serif = Font('serif')
@@ -223,11 +233,7 @@ class DrawingContext {
 
   def font_metrics(font) {
     metrics = this._g.getFontMetrics(font._swing_font)
-    return new FontMetrics {
-      def __get_height() {
-        return metrics.getHeight()
-      }
-    }
+    return FontMetrics(metrics)
   }
 
   def fill_rectangle(x, y, width, height, color = nil) {
