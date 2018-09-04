@@ -2027,7 +2027,7 @@ public final class BigTalkCore {
       if (var == null) {
         if (names.length + opts.length < args.length) {
           throw new TypeError(
-            "Expected at most " + names.length + opts.length +
+            "Expected at most " + (names.length + opts.length) +
             " args but got " + args.length);
         }
       } else {
@@ -2064,7 +2064,12 @@ public final class BigTalkCore {
   public static Scope makeNativeClass(Class<?> c, String name, Iterable<Scope> bases, Scope proto) {
     Scope userClass = makeClass(name, bases, proto);
     registerNativeClass(c, proto);
-    return userClass;
+    return userClass
+      .put(new Builtin("__call", P("*args"), (self, args) -> {
+        // Unless whoever makes this class explicitly adds a constructor,
+        // native classes should not be constructible.
+        throw new TypeError("Native class " + name + " is not constructible");
+      }));
   }
   public static Scope makeNativeClass(Class<?> cls, String name, Scope proto) {
     return makeNativeClass(cls, name, listOf(nativeClass), proto);

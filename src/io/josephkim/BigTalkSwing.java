@@ -17,6 +17,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseWheelEvent;
 import java.awt.Font;
+import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Point;
@@ -253,8 +254,35 @@ public final class BigTalkSwing {
     makeNativeClass(
       Graphics.class,
       new Scope(null)
+        .put(new Builtin("create", P("x", "y", "width", "height"), (self, args) -> {
+          return asNative(self.mustGetNative(Graphics.class).create(
+            (int) args[0].mustCast(Number.class).get(),
+            (int) args[1].mustCast(Number.class).get(),
+            (int) args[2].mustCast(Number.class).get(),
+            (int) args[3].mustCast(Number.class).get()));
+        }))
+        .put(new Builtin("dispose", P(), (self, args) -> {
+          self.mustGetNative(Graphics.class).dispose();
+          return nil;
+        }))
+        .put(new Builtin("getFontMetrics", P("font"), (self, args) -> {
+          Graphics g = self.mustGetNative(Graphics.class);
+          Font font = args[0].mustGetNative(Font.class);
+          return asNative(g.getFontMetrics(font));
+        }))
+        .put(new Builtin("setClip", P("x", "y", "width", "height"), (self, args) -> {
+          self.mustGetNative(Graphics.class).setClip(
+            (int) args[0].mustCast(Number.class).get(),
+            (int) args[1].mustCast(Number.class).get(),
+            (int) args[2].mustCast(Number.class).get(),
+            (int) args[3].mustCast(Number.class).get());
+          return nil;
+        }))
         .put(new Builtin("getClipBounds", P(), (self, args) -> {
           Rectangle rect = self.mustGetNative(Graphics.class).getClipBounds();
+          if (rect == null) {
+            return nil;
+          }
           return Arr.of(
             Number.of(rect.x),
             Number.of(rect.y),
@@ -302,6 +330,19 @@ public final class BigTalkSwing {
         args[0].mustCast(Str.class).get(),
         (int) args[1].mustCast(Number.class).get(),
         (int) args[2].mustCast(Number.class).get()))));
+  static final Scope fontMetricsClass =
+    makeNativeClass(
+      FontMetrics.class,
+      new Scope(null)
+        .put(new Builtin("stringWidth", P("str"), (self, args) -> {
+          FontMetrics metrics = self.mustGetNative(FontMetrics.class);
+          String s = args[0].mustCast(Str.class).get();
+          return Number.of(metrics.stringWidth(s));
+        }))
+        .put(new Builtin("getHeight", P(), (self, args) -> {
+          return Number.of(self.mustGetNative(FontMetrics.class).getHeight());
+        })));
+
 
   public static void init() {
     addNativeModule("gui.swing", () -> new Scope(null)

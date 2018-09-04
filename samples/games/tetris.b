@@ -229,9 +229,9 @@ def main() {
     g.fill_rectangle(0, 0, g.width / 2, g.height, board_color)
 
     g.draw_string(
+      str(score),
       g.width * 2 / 3,
       g.height / 2,
-      str(score),
       sg.Monospace[50],
       score_color)
 
