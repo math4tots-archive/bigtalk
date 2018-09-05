@@ -13,6 +13,7 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.Stack;
+import java.util.stream.Collectors;
 
 
 // BigTalkCore!!
@@ -207,6 +208,17 @@ public final class BigTalkCore {
     }))
     .put(new Builtin("strip", P(), (self, args) -> {
       return Str.of(self.mustCast(Str.class).value.trim());
+    }))
+    .put(new Builtin("substring", P("start", "end"), (self, args) -> {
+      // TODO: Take into consideration unicode indexing
+      return Str.of(self.mustCast(Str.class).get().substring(
+        (int) args[0].mustCast(Number.class).get(),
+        (int) args[1].mustCast(Number.class).get()));
+    }))
+    .put(new Builtin("split", P("sep"), (self, args) -> {
+      String sep = args[0].mustCast(Str.class).get();
+      return new Arr(new ArrayList<>(
+        map(strsplit(self.mustCast(Str.class).get(), sep), Str::of)));
     }))
     .put(new Builtin("join", P("arg"), (self, args) -> {
       String sep = self.str();
@@ -3363,6 +3375,22 @@ public final class BigTalkCore {
       }
     }
     return count;
+  }
+  public static List<String> strsplit(String s, String sep) {
+    List<String> ret = new ArrayList<>();
+    int last = 0;
+    while (true) {
+      int i = last;
+      while (i < s.length() && !s.startsWith(sep, i)) {
+        i++;
+      }
+      ret.add(s.substring(last, i));
+      if (i >= s.length()) {
+        break;
+      }
+      last = i + sep.length();
+    }
+    return ret;
   }
   public static String strjoin(String sep, Iterable<?> parts) {
     StringBuilder sb = new StringBuilder();

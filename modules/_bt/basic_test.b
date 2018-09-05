@@ -208,6 +208,11 @@
   assert(not ('a' >= 'b'))
   assert('a' <= 'b')
   assert('a' <= 'a')
+  assert.equal("a\nb".split('\n'), ["a", "b"])
+  assert.equal("a\nb\n".split('\n'), ["a", "b", ''])
+  assert.equal("a\nb\n\n".split('\n'), ["a", "b", '', ''])
+  assert.equal("a\n\nb\n".split('\n'), ["a", "", "b", ''])
+  assert.equal("a\nbcd efg\n".split('\n'), ["a", "bcd efg", ''])
 
   """default function arguments"""
   %% {

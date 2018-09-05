@@ -166,6 +166,10 @@ class FontMetrics {
   def __get_height() {
     return this._metrics.getHeight()
   }
+
+  def width(s) {
+    return this._metrics.stringWidth(s)
+  }
 }
 
 Monospace = Font('monospace')
