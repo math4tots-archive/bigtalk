@@ -201,6 +201,10 @@
   assert([1, 2, 3].all(x -> x))
   assert([0, 1].any(x -> x))
   assert(not [0, 1].all(x -> x))
+  assert.equal([1, 2, 3][:], [1, 2, 3])
+  assert.equal([1, 2, 3, 4, 5][1:], [2, 3, 4, 5])
+  assert.equal([1, 2, 3, 4, 5][1:-1], [2, 3, 4])
+  assert.equal([1, 2, 3, 4, 5][-1], 5)
 
   """string"""
   assert('a' < 'b')
@@ -280,7 +284,10 @@
     assert.equal('😎🍆🐄'[2], '🐄')
     assert('😎🍆🐄'[2] != '🍆')
 
-    assert.equal('😎🍆🐄'.substring(1, 3), '🍆🐄')
+    assert.equal('😎🍆🐄'[1:3], '🍆🐄')
+    assert.equal('😎🍆🐄'[-1], '🐄')
+    assert.equal('😎🍆🐄'[-2], '🍆')
+
 
     """Thai characters
     It might look like there should only be 6 characters

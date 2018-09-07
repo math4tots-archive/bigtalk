@@ -50,7 +50,7 @@ class TextView {
     while (last_y <= clip_height and next_line_index < line_limit) {
       line = buffer[next_line_index]
       if (next_line_index == cursor_line) {
-        prefix = line.substring(0, cursor_column)
+        prefix = line[:cursor_column]
         x = font_metrics.width(prefix)
 
         ctx.color = this.cursor_color

@@ -52,6 +52,7 @@ public final class BigTalkCore {
   private static final Symbol __callSymbol = Symbol.of("__call");
   private static final Symbol __getitemSymbol = Symbol.of("__getitem");
   private static final Symbol __setitemSymbol = Symbol.of("__setitem");
+  private static final Symbol __sliceSymbol = Symbol.of("__slice");
   private static final Symbol __reprSymbol = Symbol.of("__repr");
   private static final Symbol __strSymbol = Symbol.of("__str");
   private static final Symbol __powSymbol = Symbol.of("__pow");
@@ -197,9 +198,10 @@ public final class BigTalkCore {
   static final Scope stringProto = new Scope(null)
     .put(new Builtin("__len", P(), (self, args) ->
       Number.of(self.mustCast(Str.class).size())))
-    .put(new Builtin("__getitem", P("index"), (self, args) ->
-      self.mustCast(Str.class).getItem(
-        (int) args[0].mustCast(Number.class).get())))
+    .put(new Builtin("__getitem", P("index"), (self, args) -> {
+      int i = args[0].asInt();
+      return self.mustCast(Str.class).getItem(i);
+    }))
     .put(new Builtin("__add", P("x"), (self, args) -> {
       return Str.of(
         self.mustCast(Str.class).value +
@@ -208,10 +210,16 @@ public final class BigTalkCore {
     .put(new Builtin("strip", P(), (self, args) -> {
       return Str.of(self.mustCast(Str.class).value.trim());
     }))
-    .put(new Builtin("substring", P("start", "end"), (self, args) -> {
+    .put(new Builtin("__slice", P("start", "end"), (self, args) -> {
       int[] codePoints = self.mustCast(Str.class).getCodePoints();
-      int start = (int) args[0].mustCast(Number.class).get();
-      int end = (int) args[1].mustCast(Number.class).get();
+      int start = args[0] == nil ? 0 : args[0].asInt();
+      int end = args[1] == nil ? 0 : args[1].asInt();
+      while (start < 0) {
+        start += codePoints.length;
+      }
+      while (end <= 0) {
+        end += codePoints.length;
+      }
       return Str.of(new String(codePoints, start, end - start));
     }))
     .put(new Builtin("split", P("sep"), (self, args) -> {
@@ -275,12 +283,28 @@ public final class BigTalkCore {
       new Scope(null));
   static final Scope listProto = new Scope(null)
     .put(new Builtin("__getitem", P("index"), (self, args) -> {
-      return self.mustCast(Arr.class).value
-        .get((int) args[0].mustCast(Number.class).get());
+      ArrayList<Value> arr = self.asList();
+      int i = args[0].asInt();
+      while (i < 0) {
+        i += arr.size();
+      }
+      return arr.get(i);
     }))
     .put(new Builtin("__setitem", P("index", "value"), (self, args) -> {
       return self.mustCast(Arr.class).value
         .set((int) args[0].mustCast(Number.class).get(), args[1]);
+    }))
+    .put(new Builtin("__slice", P("start", "end"), (self, args) -> {
+      ArrayList<Value> list = self.asList();
+      int start = args[0] == nil ? 0 : args[0].asInt();
+      int end = args[1] == nil ? 0 : args[1].asInt();
+      while (start < 0) {
+        start += list.size();
+      }
+      while (end <= 0) {
+        end += list.size();
+      }
+      return new Arr(new ArrayList<>(list.subList(start, end)));
     }))
     .put(new Builtin("__mul", P("n"), (self, args) -> {
       ArrayList<Value> original = self.mustCast(Arr.class).value;
@@ -1488,6 +1512,12 @@ public final class BigTalkCore {
     @Override public String toString() {
       return str();
     }
+    public final int asInt() {
+      return (int) mustCast(Number.class).get();
+    }
+    public final ArrayList<Value> asList() {
+      return mustCast(Arr.class).value;
+    }
   }
   public static abstract class SimpleValue extends Value {
     private SimpleValue() {}
@@ -1617,7 +1647,11 @@ public final class BigTalkCore {
       return getCodePoints().length;
     }
     public Str getItem(int i) {
-      return fromCodePoint(getCodePoints()[i]);
+      int[] codePoints = getCodePoints();
+      while (i < 0) {
+        i += codePoints.length;
+      }
+      return fromCodePoint(codePoints[i]);
     }
     @Override public boolean equals(Object other) {
       return other instanceof Str && value.equals(((Str) other).value);
@@ -2855,6 +2889,25 @@ public final class BigTalkCore {
           continue;
         }
         if (consume("[")) {
+          int save = i;
+          if (!at("]")) {
+            if (!at(":")) {
+              parseExpression();
+            }
+            if (at(":")) {
+              i = save;
+              Expression start =
+                at(":") ? new Literal(token, nil) : parseExpression();
+              expect(":");
+              Expression end =
+                at("]") ? new Literal(token, nil) : parseExpression();
+              expect("]");
+              expression = methodCall(token, expression, __sliceSymbol, start, end);
+              continue;
+            } else {
+              i = save;
+            }
+          }
           List<Expression> args = skippingNewlineReturn(true, () -> {
             List<Expression> expressions = new ArrayList<>();
             expressions.add(parseExpression());
