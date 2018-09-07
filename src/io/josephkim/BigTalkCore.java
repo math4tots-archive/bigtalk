@@ -209,10 +209,10 @@ public final class BigTalkCore {
       return Str.of(self.mustCast(Str.class).value.trim());
     }))
     .put(new Builtin("substring", P("start", "end"), (self, args) -> {
-      // TODO: Take into consideration unicode indexing
-      return Str.of(self.mustCast(Str.class).get().substring(
-        (int) args[0].mustCast(Number.class).get(),
-        (int) args[1].mustCast(Number.class).get()));
+      int[] codePoints = self.mustCast(Str.class).getCodePoints();
+      int start = (int) args[0].mustCast(Number.class).get();
+      int end = (int) args[1].mustCast(Number.class).get();
+      return Str.of(new String(codePoints, start, end - start));
     }))
     .put(new Builtin("split", P("sep"), (self, args) -> {
       String sep = args[0].mustCast(Str.class).get();

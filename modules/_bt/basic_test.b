@@ -280,6 +280,8 @@
     assert.equal('😎🍆🐄'[2], '🐄')
     assert('😎🍆🐄'[2] != '🍆')
 
+    assert.equal('😎🍆🐄'.substring(1, 3), '🍆🐄')
+
     """Thai characters
     It might look like there should only be 6 characters
     below, there's a modifier character that doesn't take any space
