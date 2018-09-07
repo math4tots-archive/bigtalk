@@ -218,6 +218,11 @@ public final class BigTalkSwing {
       "KeyEvent",
       listOf(inputEventClass),
       new Scope(null)
+        .put(new Builtin("getKeyChar", P(), (self, args) -> {
+          KeyEvent event = self.mustGetNative(KeyEvent.class);
+          Character c = event.getKeyChar();
+          return c == KeyEvent.CHAR_UNDEFINED ? nil : Str.of(c.toString());
+        }))
         .put(new Builtin("getKeyCode", P(), (self, args) ->
           Number.of(self.mustGetNative(KeyEvent.class).getKeyCode())))
         .put(new Builtin("getKeyText", P(), (self, args) ->

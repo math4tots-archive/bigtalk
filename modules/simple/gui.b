@@ -75,10 +75,19 @@ class Window {
       'key', () -> % {
         this._frame.addKeyListener(new KeyListener {
           def keyPressed(event) {
-            callback(KeyEvent(event))
+            callback(KeyEvent(event, false))
           }
           def keyReleased(event) {}
           def keyTyped(event) {}
+        })
+      },
+      'type', () -> % {
+        this._frame.addKeyListener(new KeyListener {
+          def keyPressed(event) {}
+          def keyReleased(event) {}
+          def keyTyped(event) {
+            callback(KeyEvent(event, true))
+          }
         })
       },
       () -> % {
@@ -89,12 +98,29 @@ class Window {
 }
 
 class KeyEvent {
-  def __init(keyEvent) {
+  def __init(keyEvent, is_type_event) {
     this._keyEvent = keyEvent
+    this._modifiers = nil
+    this._char = nil
+    this._is_type_event = is_type_event
   }
 
   def __get_key() {
     return this._keyEvent.getKeyText()
+  }
+
+  def __get_char() {
+    if (this._is_type_event and this._char is nil) {
+      this._char = this._keyEvent.getKeyChar()
+    }
+    return this._char
+  }
+
+  def __get_modifiers() {
+    if (this._modifiers is nil) {
+      this._modifiers = Set(this._keyEvent.getModifiersExText().split('+'))
+    }
+    return this._modifiers
   }
 
   def __repr() {

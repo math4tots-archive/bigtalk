@@ -99,8 +99,11 @@ window.on('key', event -> % {
       view.move_cursor([-1, 0])
     },
     () -> % {
-      print('event.key = ' + event.key)
+      print('event.key = ' + event.key + ', char = ' + str(event.char))
     })
   window.repaint()
+})
+window.on('type', event -> % {
+  print('event.char = ' + str(event.char))
 })
 window.show()

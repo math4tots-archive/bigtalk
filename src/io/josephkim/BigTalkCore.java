@@ -13,7 +13,6 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.Stack;
-import java.util.stream.Collectors;
 
 
 // BigTalkCore!!
@@ -325,7 +324,18 @@ public final class BigTalkCore {
   static final Scope setProto = new Scope(null)
     .put(new Builtin("__len", P(), (self, args) ->
       Number.of(self.mustCast(XSet.class).value.size())));
-  static final Scope setClass = makeClass("Set", setProto);
+  static final Scope setClass =
+    makeClass("Set", setProto)
+    .put(new Builtin("__call", P("xs"), (self, args) -> {
+      ArrayList<Value> arr = new ArrayList<>();
+      Value iterator = args[0].iterator();
+      Value next = iterator.next();
+      while (next != null) {
+        arr.add(next);
+        next = iterator.next();
+      }
+      return new XSet(new HashSet<>(arr));
+    }));
   static final Scope mapProto = new Scope(null)
     .put(new Builtin("__getitem", P("key"), (self, args) -> {
       Value value = self.mustCast(XMap.class).get().get(args[0]);
@@ -400,6 +410,7 @@ public final class BigTalkCore {
     .put("String", stringClass)
     .put("Function", functionClass)
     .put("List", listClass)
+    .put("Set", setClass)
     .put("RandomAccessContainer", randomAccessContainerClass)
     .put("assert", makeSingleton("assert")
       .put(new Builtin("type", P("obj", "type"), (self, args) -> {
