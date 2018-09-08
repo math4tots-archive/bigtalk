@@ -1,4 +1,4 @@
-import simple.gui as sg
+import simple.core.gui as sg
 
 def main() {
   window = sg.Window()

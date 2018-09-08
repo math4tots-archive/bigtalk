@@ -1,7 +1,7 @@
 """tetris game
 """
 import _bt.basic_test
-import simple.gui as sg
+import simple.core.gui as sg
 import random
 
 NUMBER_OF_ROWS = 24

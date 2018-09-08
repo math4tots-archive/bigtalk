@@ -1,5 +1,7 @@
 """Dead simple API for making simple graphical user interfaces
 
+For a more fun gui api that's uses this module as a backend, see simple.gui
+
 This implementation uses gui.swing as a backend
 """
 import gui.swing

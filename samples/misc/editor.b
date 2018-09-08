@@ -1,7 +1,7 @@
 """Basic text editor
 """
 import _bt.basic_test
-import simple.gui as sg
+import simple.core.gui as sg
 
 class TextBuffer {
   def __init(s = '') {
