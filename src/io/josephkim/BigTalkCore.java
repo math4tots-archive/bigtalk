@@ -3128,22 +3128,26 @@ public final class BigTalkCore {
       return this;
     }
     public Scope importModule(String name) {
-      return loadedModules.computeIfAbsent(name, n ->
-        Optional.ofNullable(nativeModules.get(n))
-          .map(NativeModule::init)
-          .orElseGet(() ->
-            sourceLoaders.stream()
-              .map(loader -> loader.load(n))
-              .filter(Optional::isPresent)
-              .map(Optional::get)
-              .findFirst()
-              .map(source -> {
-                Scope module = new Scope(globals);
-                run(module, source);
-                return module;
-              })
-              .orElseThrow(() ->
-                new KeyError("Module " + n + " not found"))));
+      if (!loadedModules.containsKey(name)) {
+        loadedModules.put(
+          name,
+          Optional.ofNullable(nativeModules.get(name))
+            .map(NativeModule::init)
+            .orElseGet(() ->
+              sourceLoaders.stream()
+                .map(loader -> loader.load(name))
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .findFirst()
+                .map(source -> {
+                  Scope module = new Scope(globals);
+                  run(module, source);
+                  return module;
+                })
+                .orElseThrow(() ->
+                  new KeyError("Module " + name + " not found"))));
+      }
+      return loadedModules.get(name);
     }
   }
 

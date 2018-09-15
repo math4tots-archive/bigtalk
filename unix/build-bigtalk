@@ -1,3 +1,5 @@
 #!/bin/bash
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"/..
-mkdir -p "$DIR"/out && javac "$DIR"/src/io/josephkim/BigTalk{Core,Desktop,Swing}.java -Xlint -d "$DIR"/out
+mkdir -p "$DIR"/out && \
+javac "$DIR"/src/io/josephkim/BigTalk{Core,Desktop,Swing}.java \
+  -Xlint -d "$DIR"/out
