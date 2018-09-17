@@ -3473,12 +3473,50 @@ public final class BigTalkCore {
     return sb.toString();
   }
   public static String strunescape(String escapedString) {
-    return escapedString
-      .replace("\\n", "\n")
-      .replace("\\t", "\t")
-      .replace("\\\"", "\"")
-      .replace("\\\'", "\'")
-      .replace("\\\\", "\\");
+    StringBuilder sb = new StringBuilder();
+    int i = 0;
+    while (i < escapedString.length()) {
+      char c = escapedString.charAt(i++);
+      if (c == '\\') {
+        if (i < escapedString.length()) {
+          char e = escapedString.charAt(i++);
+          switch (e) {
+            case 'n':
+              sb.append("\n");
+              break;
+            case 't':
+              sb.append("\t");
+              break;
+            case '"':
+              sb.append("\"");
+              break;
+            case '\'':
+              sb.append("\'");
+              break;
+            case '\\':
+              sb.append("\\");
+              break;
+            case 'u':
+              StringBuilder nsb = new StringBuilder();
+              while (nsb.length() < 4 && i < escapedString.length()) {
+                nsb.append(escapedString.charAt(i++));
+              }
+              int codePoint = Integer.parseInt(nsb.toString(), 16);
+              sb.append(Character.toChars(codePoint));
+              break;
+            default:
+              // TODO: Better Error handling
+              throw new RuntimeException();
+          }
+        } else {
+          // TODO: Better Error handling
+          throw new RuntimeException();
+        }
+      } else {
+        sb.append(c);
+      }
+    }
+    return sb.toString();
   }
   public static String strescape(String str) {
     return str
