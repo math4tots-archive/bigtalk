@@ -194,26 +194,26 @@ def main() {
   gui = sg.Window()
   gui.title = 'Tetris'
   gui.size = [1000, 1200]
-  gui.resizable = false
+  """gui.resizable = false"""
   gui.on('key', event -> % {
     switch(event.key,
       'A', nil,
-      'Left', () -> {
+      'LEFT', () -> {
         move_piece(0, -1)
       },
       'D', nil,
-      'Right', () -> {
+      'RIGHT', () -> {
         move_piece(0, 1)
       },
       'S', nil,
-      'Down', () -> {
+      'DOWN', () -> {
         move_piece_down()
       },
       'W', nil,
-      'Up', () -> {
+      'UP', () -> {
         rotate_piece()
       },
-      'Space', () -> % {
+      'SPACE', () -> % {
         for i in range(board.nrows) {
           move_piece(1, 0)
         }

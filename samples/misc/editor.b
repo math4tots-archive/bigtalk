@@ -86,16 +86,16 @@ window.size = [400, 400]
 window.on('draw', view.draw)
 window.on('key', event -> % {
   switch(event.key,
-    'Right', () -> % {
+    'RIGHT', () -> % {
       view.move_cursor([0, 1])
     },
-    'Left', () -> % {
+    'LEFT', () -> % {
       view.move_cursor([0, -1])
     },
-    'Down', () -> % {
+    'DOWN', () -> % {
       view.move_cursor([1, 0])
     },
-    'Up', () -> % {
+    'UP', () -> % {
       view.move_cursor([-1, 0])
     },
     () -> % {
